@@ -1,0 +1,5 @@
+comtradeapicall
+duckdb
+pandas
+python-dotenv
+tqdm
