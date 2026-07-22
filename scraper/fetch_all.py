@@ -15,7 +15,9 @@ import io
 import json
 import logging
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 import comtradeapicall
@@ -162,9 +164,10 @@ def construire_paires(args, reporters_df):
 
 def confirmer_lancement_complet(paires):
     n = len(paires)
-    duree_estimee_h = n * (config.PAUSE_ENTRE_REQUETES + 2) / 3600  # ~2s de latence API estimée
-    print(f"Lancement complet : {n} appels prévus (reporters × années).")
-    print(f"Durée estimée : ~{duree_estimee_h:.1f} heures (estimation prudente, hors retries).")
+    # ~20s de latence API observée en moyenne par appel, répartie sur N_WORKERS
+    duree_estimee_h = n * (config.PAUSE_ENTRE_REQUETES + 20) / config.N_WORKERS / 3600
+    print(f"Lancement complet : {n} appels prévus (reporters × années), {config.N_WORKERS} en parallèle.")
+    print(f"Durée estimée : ~{duree_estimee_h:.1f} heures (estimation, hors retries).")
     reponse = input("Confirmer le lancement ? [y/N] ").strip().lower()
     if reponse != "y":
         print("Annulé.")
@@ -179,58 +182,65 @@ def configurer_logging():
     )
 
 
-def traiter_paire(reporter, annee, cmd_codes, progress, failed):
+def traiter_paire(reporter, annee, cmd_codes, progress, failed, verrou):
+    """Traite une paire (reporter, année). Le verrou protège uniquement les
+    accès aux dicts partagés progress/failed et l'écriture des checkpoints ;
+    l'appel réseau (tenter_telechargement) reste hors verrou pour permettre
+    le vrai parallélisme entre workers."""
     code = str(reporter["reporterCode"])
     cle = f"{code}_{annee}"
     fichier = config.RAW_DIR / f"{code}_{annee}.csv"
 
-    # Un fichier déjà présent et non vide n'est jamais re-téléchargé.
-    if fichier.exists() and fichier.stat().st_size > 0:
-        if cle not in progress:
-            progress[cle] = {
-                "status": "ok",
-                "rows": None,
-                "file": fichier.name,
-                "note": "fichier pré-existant, non revérifié",
-                "timestamp": maintenant(),
-            }
-            sauvegarder_json(config.PROGRESS_FILE, progress)
-        return
+    with verrou:
+        # Un fichier déjà présent et non vide n'est jamais re-téléchargé.
+        if fichier.exists() and fichier.stat().st_size > 0:
+            if cle not in progress:
+                progress[cle] = {
+                    "status": "ok",
+                    "rows": None,
+                    "file": fichier.name,
+                    "note": "fichier pré-existant, non revérifié",
+                    "timestamp": maintenant(),
+                }
+                sauvegarder_json(config.PROGRESS_FILE, progress)
+            return
 
-    if cle in progress and progress[cle].get("status") in ("ok", "empty"):
-        return
+        if cle in progress and progress[cle].get("status") in ("ok", "empty"):
+            return
 
     debut = time.time()
     df, erreur = tenter_telechargement(cmd_codes, code, annee)
     duree = time.time() - debut
+    time.sleep(config.PAUSE_ENTRE_REQUETES)
 
-    if df is None:
-        enregistrer_echec(failed, code, annee, erreur)
-        sauvegarder_json(config.FAILED_FILE, failed)
-        logging.error("%s %s ECHEC après %d tentatives : %s", code, annee, config.MAX_RETRIES, erreur)
-        return
+    with verrou:
+        if df is None:
+            enregistrer_echec(failed, code, annee, erreur)
+            sauvegarder_json(config.FAILED_FILE, failed)
+            logging.error("%s %s ECHEC après %d tentatives : %s", code, annee, config.MAX_RETRIES, erreur)
+            return
 
-    if len(df) == 0:
-        progress[cle] = {"status": "empty", "timestamp": maintenant()}
+        if len(df) == 0:
+            progress[cle] = {"status": "empty", "timestamp": maintenant()}
+            sauvegarder_json(config.PROGRESS_FILE, progress)
+            retirer_de_failed(failed, code, annee)
+            sauvegarder_json(config.FAILED_FILE, failed)
+            logging.info("%s %s VIDE (0 ligne) en %.1fs", code, annee, duree)
+            return
+
+        colonnes_manquantes = [c for c in config.COLONNES_ATTENDUES if c not in df.columns]
+        if colonnes_manquantes:
+            enregistrer_echec(failed, code, annee, f"colonnes manquantes : {colonnes_manquantes}")
+            sauvegarder_json(config.FAILED_FILE, failed)
+            logging.error("%s %s ECHEC : colonnes manquantes %s", code, annee, colonnes_manquantes)
+            return
+
+        df.to_csv(fichier, index=False)
+        progress[cle] = {"status": "ok", "rows": len(df), "file": fichier.name, "timestamp": maintenant()}
         sauvegarder_json(config.PROGRESS_FILE, progress)
         retirer_de_failed(failed, code, annee)
         sauvegarder_json(config.FAILED_FILE, failed)
-        logging.info("%s %s VIDE (0 ligne) en %.1fs", code, annee, duree)
-        return
-
-    colonnes_manquantes = [c for c in config.COLONNES_ATTENDUES if c not in df.columns]
-    if colonnes_manquantes:
-        enregistrer_echec(failed, code, annee, f"colonnes manquantes : {colonnes_manquantes}")
-        sauvegarder_json(config.FAILED_FILE, failed)
-        logging.error("%s %s ECHEC : colonnes manquantes %s", code, annee, colonnes_manquantes)
-        return
-
-    df.to_csv(fichier, index=False)
-    progress[cle] = {"status": "ok", "rows": len(df), "file": fichier.name, "timestamp": maintenant()}
-    sauvegarder_json(config.PROGRESS_FILE, progress)
-    retirer_de_failed(failed, code, annee)
-    sauvegarder_json(config.FAILED_FILE, failed)
-    logging.info("%s %s OK (%d lignes) en %.1fs", code, annee, len(df), duree)
+        logging.info("%s %s OK (%d lignes) en %.1fs", code, annee, len(df), duree)
 
 
 def main():
@@ -261,14 +271,19 @@ def main():
 
     progress = charger_json(config.PROGRESS_FILE, {})
     failed = charger_json(config.FAILED_FILE, [])
+    verrou = threading.Lock()
 
     try:
-        for reporter, annee in tqdm(paires, desc="Extraction"):
-            traiter_paire(reporter, annee, cmd_codes, progress, failed)
-            time.sleep(config.PAUSE_ENTRE_REQUETES)
+        with ThreadPoolExecutor(max_workers=config.N_WORKERS) as executor:
+            futures = [
+                executor.submit(traiter_paire, reporter, annee, cmd_codes, progress, failed, verrou)
+                for reporter, annee in paires
+            ]
+            for future in tqdm(as_completed(futures), total=len(futures), desc="Extraction"):
+                future.result()  # relance ici toute exception inattendue d'un worker
     except KeyboardInterrupt:
         logging.warning("Interruption manuelle (Ctrl+C).")
-        print("\nInterrompu. progress.json/failed.json sont à jour (sauvegarde après chaque paire) : relance plus tard pour reprendre.")
+        print("\nInterrompu. progress.json/failed.json sont à jour (sauvegarde après chaque paire traitée) : relance plus tard pour reprendre.")
         sys.exit(130)
 
 

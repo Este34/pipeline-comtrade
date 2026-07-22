@@ -31,9 +31,16 @@ ANNEE_DEBUT = 2000
 ANNEE_FIN = 2025
 
 # --- Comportement réseau ---
-PAUSE_ENTRE_REQUETES = 1.5  # secondes entre chaque appel API
+PAUSE_ENTRE_REQUETES = 1.5  # secondes entre deux appels d'un même worker
 MAX_RETRIES = 5
 BACKOFF_BASE = 2  # secondes ; backoff exponentiel 2,4,8,16,32
+
+# Nombre d'appels API en parallèle. La latence observée par appel (4 à 70s,
+# selon le volume de données du pays) domine largement PAUSE_ENTRE_REQUETES :
+# c'est donc le vrai levier pour accélérer un fetch --full de plusieurs
+# milliers de paires. À ajuster à la baisse si des 429 répétés apparaissent
+# dans scraper.log.
+N_WORKERS = 6
 
 # --- Chemins ---
 DATA_DIR = BASE_DIR / "data"
