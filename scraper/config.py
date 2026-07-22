@@ -57,6 +57,61 @@ PARQUET_DIR = DATA_DIR / "parquet"
 PARQUET_DETAIL_DIR = PARQUET_DIR / "detail"
 PARQUET_AGGREGAT_DIR = PARQUET_DIR / "aggregat"
 PARQUET_REFERENCE_DIR = PARQUET_DIR / "reference"
+PARQUET_CRITICAL_DIR = PARQUET_DIR / "critical"
+
+# --- Phase 3 : extraction HS6 minéraux critiques (dataset dédié) ---
+# Chemins séparés pour ne pas mélanger avec le run HS2 principal.
+RAW_CRITICAL_DIR = DATA_DIR / "raw_critical"
+PROGRESS_CRITICAL_FILE = CHECKPOINTS_DIR / "progress_critical.json"
+FAILED_CRITICAL_FILE = CHECKPOINTS_DIR / "failed_critical.json"
+
+# Liste curée de codes HS6 de minéraux/matières critiques (tous validés dans la
+# référence Comtrade 'cmd:HS'). Un minéral peut couvrir plusieurs codes
+# (minerai, oxyde, métal brut). Base : listes UE/USGS des matières premières
+# critiques, restreintes aux formes primaires (minerais, concentrés, oxydes,
+# métaux bruts) pertinentes pour une analyse de dépendance d'approvisionnement.
+CRITICAL_MINERALS_HS6 = {
+    "250410": "Graphite",
+    "250490": "Graphite",
+    "380110": "Graphite",
+    "251910": "Magnésium",
+    "251990": "Magnésium",
+    "280461": "Silicium",
+    "260200": "Manganèse",
+    "282010": "Manganèse",
+    "260400": "Nickel",
+    "282540": "Nickel",
+    "260500": "Cobalt",
+    "282200": "Cobalt",
+    "810510": "Cobalt",
+    "282520": "Lithium",
+    "283691": "Lithium",
+    "261100": "Tungstène",
+    "810191": "Tungstène",
+    "261590": "Niobium, tantale, vanadium",
+    "810310": "Tantale",
+    "810390": "Tantale",
+    "261400": "Titane",
+    "282300": "Titane",
+    "262050": "Vanadium",
+    "282530": "Vanadium",
+    "260300": "Cuivre",
+    "260800": "Zinc",
+    "260600": "Aluminium (bauxite)",
+    "261000": "Chrome",
+    "261710": "Antimoine",
+    "282580": "Antimoine",
+    "280530": "Terres rares",
+    "284610": "Terres rares",
+    "284690": "Terres rares",
+    "711011": "Platine",
+    "711021": "Palladium",
+    "711041": "Iridium, osmium, ruthénium",
+    "811211": "Béryllium",
+    "811230": "Germanium",
+    "811292": "Gallium, germanium, indium",
+    "282560": "Germanium, zirconium",
+}
 
 # Colonnes attendues dans une réponse valide de l'API
 COLONNES_ATTENDUES = [

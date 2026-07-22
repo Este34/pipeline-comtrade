@@ -153,7 +153,9 @@ def construire_paires(args, reporters_df):
             reporters = reporters_df
 
         if args.years:
-            debut, fin = args.years.split("-")
+            # Accepte une plage "2020-2023" ou une année seule "2023".
+            bornes = args.years.split("-")
+            debut, fin = bornes[0], bornes[-1]
             annees = list(range(int(debut), int(fin) + 1))
         else:
             annees = list(range(config.ANNEE_DEBUT, config.ANNEE_FIN + 1))
@@ -243,10 +245,17 @@ def traiter_paire(reporter, annee, cmd_codes, progress, failed, verrou):
         logging.info("%s %s OK (%d lignes) en %.1fs", code, annee, len(df), duree)
 
 
+def basculer_mode_critical():
+    """Bascule les chemins config vers le dataset dédié minéraux critiques.
+    Toutes les fonctions lisent config.* dynamiquement, donc réaffecter ces
+    attributs suffit à rediriger raw/progress/failed sans autre changement."""
+    config.RAW_DIR = config.RAW_CRITICAL_DIR
+    config.PROGRESS_FILE = config.PROGRESS_CRITICAL_FILE
+    config.FAILED_FILE = config.FAILED_CRITICAL_FILE
+
+
 def main():
     config.verifier_cle_api()
-    config.RAW_DIR.mkdir(parents=True, exist_ok=True)
-    config.CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
     configurer_logging()
 
     parser = argparse.ArgumentParser(description="Extraction massive UN Comtrade")
@@ -255,7 +264,18 @@ def main():
     parser.add_argument("--years", type=str, default=None, help="Plage d'années, ex: 2020-2023")
     parser.add_argument("--full", action="store_true", help="Lancement complet (avec confirmation)")
     parser.add_argument("--retry-failed", action="store_true", help="Retenter les échecs de failed.json")
+    parser.add_argument(
+        "--critical",
+        action="store_true",
+        help="Extraction HS6 minéraux critiques (dataset dédié, tous pays 2000-2025)",
+    )
     args = parser.parse_args()
+
+    if args.critical:
+        basculer_mode_critical()
+
+    config.RAW_DIR.mkdir(parents=True, exist_ok=True)
+    config.CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
 
     reporters_df = reference_data.get_reporters()
     paires = construire_paires(args, reporters_df)
@@ -264,10 +284,13 @@ def main():
         print("Rien à traiter (failed.json vide ou filtre sans résultat).")
         return
 
-    if args.full:
+    if args.full or args.critical:
         confirmer_lancement_complet(paires)
 
-    cmd_codes = ",".join(reference_data.get_hs_codes())
+    if args.critical:
+        cmd_codes = ",".join(config.CRITICAL_MINERALS_HS6.keys())
+    else:
+        cmd_codes = ",".join(reference_data.get_hs_codes())
 
     progress = charger_json(config.PROGRESS_FILE, {})
     failed = charger_json(config.FAILED_FILE, [])

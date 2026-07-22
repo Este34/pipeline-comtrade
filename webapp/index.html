@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Commerce international · Données Comtrade</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<!-- ================= EN-TÊTE ================= -->
+<header>
+  <div class="header-inner">
+    <div class="header-title">
+      <p class="fr-logo" style="color:#fff">République<br>Française</p>
+      <h1>Commerce international — Analyse des données UN Comtrade</h1>
+      <p class="sub">Imports / exports par pays, produit et minéraux critiques · 2000–2025 · 100 % hors-ligne</p>
+    </div>
+  </div>
+</header>
+
+<div id="status" role="status" aria-live="polite" aria-atomic="true">Initialisation de la base de données…</div>
+
+<!-- ================= ONGLETS ================= -->
+<nav id="tabs" role="tablist" aria-label="Vues d'analyse" style="display:flex">
+  <button class="tab active" data-view="profil" role="tab" id="tab-profil" aria-selected="true" aria-controls="view-profil">Profil pays</button>
+  <button class="tab" data-view="bilateral" role="tab" id="tab-bilateral" aria-selected="false" aria-controls="view-bilateral" tabindex="-1">Analyse bilatérale</button>
+  <button class="tab" data-view="produit" role="tab" id="tab-produit" aria-selected="false" aria-controls="view-produit" tabindex="-1">Analyse par produit</button>
+  <button class="tab" data-view="carto" role="tab" id="tab-carto" aria-selected="false" aria-controls="view-carto" tabindex="-1">Cartes & séries</button>
+  <button class="tab" data-view="mineraux" role="tab" id="tab-mineraux" aria-selected="false" aria-controls="view-mineraux" tabindex="-1">Minéraux critiques</button>
+</nav>
+
+<main id="app" style="max-width:1320px;margin:0 auto;padding:14px 16px 24px">
+  <section class="page active" id="view-profil" role="tabpanel" aria-labelledby="tab-profil" tabindex="0"></section>
+  <section class="page" id="view-bilateral" role="tabpanel" aria-labelledby="tab-bilateral" tabindex="0"></section>
+  <section class="page" id="view-produit" role="tabpanel" aria-labelledby="tab-produit" tabindex="0"></section>
+  <section class="page" id="view-carto" role="tabpanel" aria-labelledby="tab-carto" tabindex="0"></section>
+  <section class="page" id="view-mineraux" role="tabpanel" aria-labelledby="tab-mineraux" tabindex="0"></section>
+</main>
+
+<footer class="cea-banner">
+  <div class="cea-banner-inner">
+    <p class="fr-logo" style="color:#fff">République<br>Française</p>
+    <p class="cea-banner-text">Données issues de la base officielle UN Comtrade (Nations Unies).
+      Application d'analyse hors-ligne — aucune donnée n'est transmise en ligne.</p>
+  </div>
+</footer>
+
+<script src="vendor/chart.umd.min.js"></script>
+<!-- DuckDB-WASM importe « apache-arrow » en spécifieur nu : résolu en local (offline). -->
+<script type="importmap">
+{ "imports": { "apache-arrow": "./vendor/apache-arrow/arrow.min.mjs" } }
+</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
