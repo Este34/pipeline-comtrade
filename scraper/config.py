@@ -52,6 +52,12 @@ REPORTERS_CACHE_FILE = CHECKPOINTS_DIR / "reporters_cache.csv"
 DB_PATH = DATA_DIR / "comtrade.duckdb"
 LOG_PATH = BASE_DIR / "scraper.log"
 
+# --- Phase 2 : export Parquet ---
+PARQUET_DIR = DATA_DIR / "parquet"
+PARQUET_DETAIL_DIR = PARQUET_DIR / "detail"
+PARQUET_AGGREGAT_DIR = PARQUET_DIR / "aggregat"
+PARQUET_REFERENCE_DIR = PARQUET_DIR / "reference"
+
 # Colonnes attendues dans une réponse valide de l'API
 COLONNES_ATTENDUES = [
     "period",

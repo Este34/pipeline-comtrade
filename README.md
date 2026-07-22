@@ -1,9 +1,9 @@
 # Pipeline Comtrade
 
-Phase 1 d'un pipeline en 3 phases sur le commerce international :
+Pipeline en 3 phases sur le commerce international :
 
-1. **Extraction massive** depuis l'API UN Comtrade (ce dépôt)
-2. Nettoyage + export Parquet
+1. **Extraction massive** depuis l'API UN Comtrade — *fait*
+2. **Nettoyage + export Parquet** — *fait*
 3. Webapp d'analyse 100% offline (DuckDB-WASM + visualisations)
 
 ## Périmètre d'extraction
@@ -71,18 +71,43 @@ Charge tous les fichiers CSV de `data/raw/` non encore chargés dans
 un résumé (nb de lignes, plage d'années, reporters distincts, taille du
 fichier, % de nulls par colonne).
 
+## Phase 2 — nettoyage + export Parquet (`clean/clean_export.py`)
+
+```bash
+python clean/clean_export.py
+```
+
+Depuis `data/comtrade.duckdb`, produit un jeu de données Parquet propre, enrichi
+et partitionné, prêt pour la webapp offline DuckDB-WASM (Phase 3). Export 100 %
+natif DuckDB. Résultat typique : ~4,2 Go de base → ~240 Mo de Parquet.
+
+- `data/parquet/detail/period=YYYY/data.parquet` : détail complet (~36 M lignes),
+  partitionné par année pour des lectures partielles en navigateur
+- `data/parquet/aggregat/data.parquet` : lignes agrégées (partenaire *World* ou
+  produit `TOTAL`), pour des dashboards macro instantanés
+- `data/parquet/reference/*.parquet` : reporters, hs_codes, flows, continents
+
+Chaque ligne de détail est enrichie de `reporterISO3`, `reporterContinent`,
+`partnerISO3`, `partnerContinent` (ISO3 depuis les références Comtrade, continent
+via `pycountry-convert` ; les codes spéciaux — World, zones *nes*, groupes — ont
+un continent nul, ce qui est attendu).
+
 ## Structure
 
 ```
-scraper/
-├── config.py          # Périmètre + paramètres
+scraper/                # Phase 1 — extraction
+├── config.py           # Périmètre + paramètres + chemins
 ├── fetch_all.py        # Extraction par (reporter, année)
 ├── load_to_db.py        # Chargement fichiers → DuckDB
 └── reference_data.py    # Listes pays / codes HS / flux
+clean/                   # Phase 2 — nettoyage + export Parquet
+├── enrich.py           # Mapping code pays → ISO3 + continent
+└── clean_export.py      # Export Parquet partitionné + enrichi
 data/
 ├── raw/                # Réponses brutes {reporterCode}_{year}.csv
 ├── checkpoints/         # progress.json, failed.json, reporters_cache.csv
-└── comtrade.duckdb       # Base locale
+├── comtrade.duckdb       # Base locale (Phase 1)
+└── parquet/             # Livrable Phase 2 (detail/, aggregat/, reference/)
 ```
 
 `data/` et `.env` sont exclus de git (voir `.gitignore`) : aucune clé ni

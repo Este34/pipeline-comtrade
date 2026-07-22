@@ -1,5 +1,6 @@
 comtradeapicall
 duckdb
 pandas
+pycountry-convert
 python-dotenv
 tqdm
