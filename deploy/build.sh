@@ -39,16 +39,31 @@ curl -fsSL --retry 3 --retry-delay 2 "${ENTETES[@]}" "${SOURCE}" | tar -xzf - -C
 # Vérification explicite : sans ce garde-fou, un build qui réussit avec une
 # archive incomplète produirait un site cassé seulement à l'exécution, avec des
 # erreurs DuckDB dans la console du navigateur et aucune trace côté build.
+# Les libellés FR ne viennent pas de l'archive mais du dépôt : ils sont
+# vérifiés ici parce qu'un motif d'exclusion trop large les avait déjà fait
+# disparaître du déploiement, ce qui ne se voyait qu'au démarrage de l'app.
 REQUIS=(
   "webapp/vendor/duckdb-wasm/duckdb-eh.wasm"
   "webapp/vendor/duckdb-wasm/extensions/v1.1.1/wasm_eh/parquet.duckdb_extension.wasm"
   "webapp/data/parquet/aggregat/data.parquet"
   "webapp/data/parquet/reference/reporters.parquet"
+  "webapp/data/reference/countries_fr.json"
+  "webapp/data/reference/hs_chapters_fr.json"
+  "webapp/data/reference/minerals_fr.json"
+  "webapp/data/reference/flows_fr.json"
+  "webapp/index.html"
 )
 for fichier in "${REQUIS[@]}"; do
   if [ ! -s "${fichier}" ]; then
-    echo "ERREUR : ${fichier} absent ou vide après extraction de l'archive." >&2
-    echo "Vérifie que la release ${TAG} contient bien ${ARCHIVE} à jour." >&2
+    echo "ERREUR : ${fichier} absent ou vide." >&2
+    case "${fichier}" in
+      webapp/data/parquet/*|webapp/vendor/*)
+        echo "Ce fichier vient de l'archive : vérifie que la release ${TAG}" >&2
+        echo "contient bien un ${ARCHIVE} à jour." >&2 ;;
+      *)
+        echo "Ce fichier vient du dépôt : vérifie qu'aucune règle d'exclusion" >&2
+        echo "(.gitignore, .vercelignore) ne le retire du déploiement." >&2 ;;
+    esac
     exit 1
   fi
 done
