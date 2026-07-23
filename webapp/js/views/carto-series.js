@@ -4,7 +4,7 @@ import { query, srcAggregat, srcDetail, sqlStr } from "../db.js";
 import { axisFmt, fmtMetric, downloadCsv } from "../format.js";
 import { pays } from "../labels.js";
 import {
-  selectHTML, paysOptions, fluxOptions, metricOptions, ctrl, card, ANNEES,
+  selectHTML, paysOptions, fluxOptions, metricOptions, ctrl, card, renderChips, ANNEES,
 } from "../ui.js";
 import { lineChart } from "../charts.js";
 import { interactiveMap } from "../map.js";
@@ -23,6 +23,7 @@ export async function mount(container, { labels }) {
       ${ctrl("Mesure", selectHTML("ct-metric", metricOptions(), "valeur"))}
       <button class="btn" id="ct-go">Afficher la carte</button>
     </div>
+    <div class="chips" id="ct-chips" aria-label="Filtres actifs"></div>
     <div class="note">Faites glisser le curseur ou cliquez ▶ Play pour animer l'évolution 2000→2025.
       Cliquez un pays sur la carte pour l'ajouter à la comparaison ci-dessous.</div>
     <div id="ct-map"></div>
@@ -40,11 +41,22 @@ export async function mount(container, { labels }) {
   const mapHost = container.querySelector("#ct-map");
   const serieHost = container.querySelector("#ct-serie");
   const multi = container.querySelector("#ct-multi");
+  const chipsEl = container.querySelector("#ct-chips");
+
+  function majChips() {
+    const fluxSel = document.getElementById("ct-flux");
+    const metricSel = document.getElementById("ct-metric");
+    renderChips(chipsEl, [
+      { label: "Flux", value: fluxSel.options[fluxSel.selectedIndex].text, onReset: () => { fluxSel.value = "X"; carte(); comparer(); } },
+      { label: "Mesure", value: metricSel.options[metricSel.selectedIndex].text, onReset: () => { metricSel.value = "valeur"; carte(); comparer(); } },
+    ]);
+  }
 
   async function carte() {
     const flux = container.querySelector("#ct-flux").value;
     const metric = container.querySelector("#ct-metric").value;
-    mapHost.innerHTML = `<div class="loading">Construction de la carte…</div>`;
+    majChips();
+    mapHost.innerHTML = `<div class="skel" style="height:460px"></div>`;
 
     const rows = await query(`
       SELECT period, reporterISO3, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcAggregat()}
@@ -57,7 +69,7 @@ export async function mount(container, { labels }) {
 
     mapHost.innerHTML = "";
     const fluxLabel = flux === "X" ? "Exportations" : "Importations";
-    const c = card(`${fluxLabel} totales par pays — animation 2000→2025`, "ct-map-csv");
+    const c = card(`${fluxLabel} totales par pays, animation 2000 à 2025`, "ct-map-csv");
     mapHost.appendChild(c);
     interactiveMap(c.querySelector(".card-body"), await geo(), parAnnee, {
       annees: ANNEES,
@@ -78,6 +90,7 @@ export async function mount(container, { labels }) {
   async function comparer() {
     const flux = container.querySelector("#ct-flux").value;
     const metric = container.querySelector("#ct-metric").value;
+    majChips();
     const sel = [...multi.selectedOptions].map((o) => o.value);
     if (!sel.length) return;
     serieHost.innerHTML = `<div class="loading">Calcul des séries…</div>`;
@@ -109,6 +122,7 @@ export async function mount(container, { labels }) {
 
   container.querySelector("#ct-go").addEventListener("click", carte);
   container.querySelector("#ct-cmp").addEventListener("click", comparer);
+  ["ct-flux", "ct-metric"].forEach((id) => document.getElementById(id).addEventListener("change", majChips));
   await carte();
   await comparer();
 }

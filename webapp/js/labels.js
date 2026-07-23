@@ -24,7 +24,7 @@ export async function loadLabels() {
 
 // Nom FR d'un pays depuis son ISO3 (fallback : le code lui-même).
 export function pays(labels, iso3) {
-  return labels.countries[iso3] || iso3 || "—";
+  return labels.countries[iso3] || iso3 || "n.d.";
 }
 
 // Intitulé FR d'un chapitre HS (fallback : le code).

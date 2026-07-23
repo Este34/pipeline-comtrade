@@ -5,7 +5,8 @@ import { query, srcCritical, sqlStr } from "../db.js";
 import { fmtMetric, axisFmt, pct, downloadCsv } from "../format.js";
 import { pays } from "../labels.js";
 import {
-  selectHTML, anneeOptions, fluxOptions, metricOptions, ctrl, kpisHTML, renderTable, card, ANNEES,
+  selectHTML, anneeOptions, fluxOptions, metricOptions, ctrl, kpisHTML, renderTable, card,
+  renderChips, skeletonKpis, ANNEES,
 } from "../ui.js";
 import { barChart, lineChart } from "../charts.js";
 import { interactiveMap } from "../map.js";
@@ -37,12 +38,32 @@ export async function mount(container, { labels }) {
       ${ctrl("Mesure", selectHTML("mc-metric", metricOptions(), "valeur"))}
       <button class="btn" id="mc-go">Analyser</button>
     </div>
+    <div class="chips" id="mc-chips" aria-label="Filtres actifs"></div>
     <div class="note">Chaîne de valeur : matière première → alliage/demi-produit → produit fini.
       Un code HS6 saisi prime sur le minéral (recherche directe). « Concentration » = part cumulée des 5 premiers pays.
       Rappel : un produit fini <b>contient</b> le minéral sans en indiquer la teneur.</div>
     <div id="mc-res"></div>`;
 
   const res = container.querySelector("#mc-res");
+  const chipsEl = container.querySelector("#mc-chips");
+
+  function majChips() {
+    const annee = document.getElementById("mc-annee");
+    const flux = document.getElementById("mc-flux");
+    const metric = document.getElementById("mc-metric");
+    const code = document.getElementById("mc-code");
+    const cats = [...document.getElementById("mc-cat").selectedOptions].map((o) => o.value);
+    const items = [
+      { label: "Minéral", value: container.querySelector("#mc-min").value, onReset: () => { container.querySelector("#mc-min").value = "Lithium"; analyser(); } },
+      { label: "Catégories", value: cats.length === CATEGORIES.length ? "toutes" : `${cats.length}/${CATEGORIES.length}`,
+        onReset: () => { [...document.getElementById("mc-cat").options].forEach((o) => (o.selected = true)); analyser(); } },
+      { label: "Année", value: annee.value, onReset: () => { annee.value = "2023"; analyser(); } },
+      { label: "Flux", value: flux.options[flux.selectedIndex].text, onReset: () => { flux.value = "X"; analyser(); } },
+      { label: "Mesure", value: metric.options[metric.selectedIndex].text, onReset: () => { metric.value = "valeur"; analyser(); } },
+    ];
+    if (code.value.trim()) items.splice(1, 0, { label: "Code HS6", value: code.value.trim(), onReset: () => { code.value = ""; analyser(); } });
+    renderChips(chipsEl, items);
+  }
 
   function clauseFiltre() {
     const code = container.querySelector("#mc-code").value.trim();
@@ -61,7 +82,9 @@ export async function mount(container, { labels }) {
     const metric = container.querySelector("#mc-metric").value;
     const code = container.querySelector("#mc-code").value.trim();
     const titreCible = code ? `code ${code}` : container.querySelector("#mc-min").value;
-    res.innerHTML = `<div class="loading">Analyse en cours…</div>`;
+    majChips();
+    res.innerHTML = "";
+    skeletonKpis(res, 3);
 
     const F = sqlStr(flux);
     const filtre = clauseFiltre();
@@ -103,21 +126,21 @@ export async function mount(container, { labels }) {
     res.appendChild(kpiWrap);
 
     const top = classement.slice(0, 20);
-    const cBar = card(`Top 20 ${fluxLabel} — ${titreCible} (${annee})`, "mc-rank");
+    const cBar = card(`Top 20 ${fluxLabel} : ${titreCible} (${annee})`, "mc-rank");
     res.appendChild(cBar);
     barChart(cBar.querySelector(".card-body"), top.map((r) => pays(labels, r.iso3)), top.map((r) => r.v), metric === "poids" ? "Poids" : "Valeur", fmt);
 
-    const cMap = card(`Carte animée — ${titreCible} (2000→2025)`, "mc-map");
+    const cMap = card(`Carte animée : ${titreCible} (2000 à 2025)`, "mc-map");
     res.appendChild(cMap);
     interactiveMap(cMap.querySelector(".card-body"), await geo(), parAnnee, {
       annees: ANNEES, metric, labelFn: (iso3) => pays(labels, iso3), fmt,
     });
 
-    const cEvo = card(`Évolution mondiale — ${titreCible}`, "mc-evo");
+    const cEvo = card(`Évolution mondiale : ${titreCible}`, "mc-evo");
     res.appendChild(cEvo);
     lineChart(cEvo.querySelector(".card-body"), ANNEES, [{ label: titreCible, data: ANNEES.map((y) => evoMap.get(y)) }], fmt);
 
-    const cTable = card(`Classement détaillé — ${titreCible} (${annee})`, "mc-table");
+    const cTable = card(`Classement détaillé : ${titreCible} (${annee})`, "mc-table");
     res.appendChild(cTable);
     const lignes = top.map((r, i) => ({ rang: i + 1, pays: pays(labels, r.iso3), iso3: r.iso3, mesure: r.v, part: pct(r.v, total) }));
     renderTable(cTable.querySelector(".card-body"), [
@@ -137,5 +160,8 @@ export async function mount(container, { labels }) {
   }
 
   container.querySelector("#mc-go").addEventListener("click", analyser);
+  ["mc-min", "mc-cat", "mc-code", "mc-annee", "mc-flux", "mc-metric"].forEach((id) =>
+    document.getElementById(id).addEventListener("change", majChips)
+  );
   await analyser();
 }

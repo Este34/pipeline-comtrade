@@ -2,7 +2,8 @@
 // par onglets et le montage paresseux de chaque vue.
 import { initDB } from "./db.js";
 import { loadLabels } from "./labels.js";
-import { setStatus } from "./ui.js";
+import { setStatus, wireBackToTop } from "./ui.js";
+import { mountPalette } from "./palette.js";
 
 import * as profil from "./views/profil-pays.js";
 import * as bilateral from "./views/bilateral.js";
@@ -57,6 +58,14 @@ function initTabs() {
   });
 }
 
+// Palette de commandes : « Ouvrir le profil de X » bascule sur la vue Profil
+// pays et notifie ce module via un événement (découplage simple, sans import
+// circulaire entre main.js et views/profil-pays.js).
+async function ouvrirPaysDansProfil(iso3) {
+  await activer("profil");
+  window.dispatchEvent(new CustomEvent("comtrade:open-country", { detail: { iso3 } }));
+}
+
 async function boot() {
   try {
     setStatus("Chargement des libellés et de la base de données…");
@@ -64,6 +73,14 @@ async function boot() {
     ctx = { labels };
     setStatus("Prêt. Sélectionnez vos filtres puis lancez l'analyse.");
     initTabs();
+    wireBackToTop();
+
+    const palette = mountPalette({ labels, onGoToView: activer, onOpenCountry: ouvrirPaysDansProfil });
+    document.getElementById("paletteBtn").addEventListener("click", () => palette.open());
+    if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
+      document.getElementById("kbdHint").textContent = "⌘K";
+    }
+
     await activer("profil");
   } catch (e) {
     setStatus("Erreur d'initialisation : " + e.message, true);

@@ -23,6 +23,11 @@ async function _init() {
   const db = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(), worker);
   await db.instantiate(BUNDLE.mainModule);
   _conn = await db.connect();
+  // DuckDB charge l'extension parquet à la demande depuis extensions.duckdb.org
+  // par défaut : on la fait pointer vers notre copie locale vendorisée pour
+  // rester 100 % hors-ligne (aucun appel réseau externe au runtime).
+  const repo = new URL("extensions", VENDOR).href;
+  await _conn.query(`SET custom_extension_repository='${repo}';`);
   return _conn;
 }
 
@@ -47,7 +52,7 @@ export async function query(sql) {
 
 // --- Helpers de construction des sources Parquet ---
 
-// Fichier agrégat (World/TOTAL) — petit, pour les vues macro.
+// Fichier agrégat (World/TOTAL), petit, pour les vues macro.
 export function srcAggregat() {
   return `read_parquet('${PARQUET_BASE}aggregat/data.parquet')`;
 }

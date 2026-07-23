@@ -1,17 +1,17 @@
-// Helpers de formatage et d'export — adaptés des utilitaires génériques du
+// Helpers de formatage et d'export, adaptés des utilitaires génériques du
 // template-simulateur (formatage FR, échappement, export CSV).
 
 const NF = new Intl.NumberFormat("fr-FR");
 
 // Nombre formaté FR (séparateurs de milliers).
 export function fmtNum(v) {
-  if (v == null || Number.isNaN(v)) return "—";
+  if (v == null || Number.isNaN(v)) return "n.d.";
   return NF.format(Math.round(Number(v)));
 }
 
 // Valeur monétaire US$ en notation compacte lisible (Md / M / k).
 export function fmtUSD(v) {
-  if (v == null || Number.isNaN(v)) return "—";
+  if (v == null || Number.isNaN(v)) return "n.d.";
   const n = Number(v);
   const abs = Math.abs(n);
   if (abs >= 1e9) return (n / 1e9).toFixed(1).replace(".", ",") + " Md $";
@@ -60,7 +60,7 @@ export function axisFmt(metric) {
 
 // Pourcentage à une décimale.
 export function pct(part, total) {
-  if (!total) return "—";
+  if (!total) return "n.d.";
   return (100 * part / total).toFixed(1).replace(".", ",") + " %";
 }
 

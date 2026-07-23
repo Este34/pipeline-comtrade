@@ -74,7 +74,7 @@ CAT_FINI = "Produit fini"             # batteries, aimants, catalyseurs, condens
 # 'cmd:HS'), couvrant la chaîne : matière première → alliage/demi-produit →
 # produit fini embarquant le minéral. Base : listes UE/USGS des matières
 # premières critiques. Rappel : les stats douanières classent par PRODUIT, pas
-# par teneur — les produits finis « contiennent » le minéral sans en donner la
+# par teneur : les produits finis « contiennent » le minéral sans en donner la
 # quantité embarquée.
 # Structure : (minéral, catégorie, [codes HS6]).
 _CRITICAL_GROUPS = [

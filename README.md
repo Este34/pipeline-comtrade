@@ -2,9 +2,9 @@
 
 Pipeline en 3 phases sur le commerce international :
 
-1. **Extraction massive** depuis l'API UN Comtrade — *fait*
-2. **Nettoyage + export Parquet** — *fait*
-3. **Webapp d'analyse 100% offline** (DuckDB-WASM) — *fait*
+1. **Extraction massive** depuis l'API UN Comtrade, *fait*
+2. **Nettoyage + export Parquet**, *fait*
+3. **Webapp d'analyse 100% offline** (DuckDB-WASM), *fait*
 
 ## Périmètre d'extraction
 
@@ -71,7 +71,7 @@ Charge tous les fichiers CSV de `data/raw/` non encore chargés dans
 un résumé (nb de lignes, plage d'années, reporters distincts, taille du
 fichier, % de nulls par colonne).
 
-## Phase 2 — nettoyage + export Parquet (`clean/clean_export.py`)
+## Phase 2, nettoyage + export Parquet (`clean/clean_export.py`)
 
 ```bash
 python clean/clean_export.py
@@ -89,7 +89,7 @@ natif DuckDB. Résultat typique : ~4,2 Go de base → ~240 Mo de Parquet.
 
 Chaque ligne de détail est enrichie de `reporterISO3`, `reporterContinent`,
 `partnerISO3`, `partnerContinent` (ISO3 depuis les références Comtrade, continent
-via `pycountry-convert` ; les codes spéciaux — World, zones *nes*, groupes — ont
+via `pycountry-convert` ; les codes spéciaux, World, zones *nes*, groupes, ont
 un continent nul, ce qui est attendu).
 
 ## Minéraux critiques (dataset HS6 dédié)
@@ -104,7 +104,7 @@ python scraper/load_to_db.py --critical     # -> table trade_critical
 python clean/clean_export.py --critical      # -> data/parquet/critical/
 ```
 
-## Phase 3 — webapp d'analyse offline (`webapp/`)
+## Phase 3, webapp d'analyse offline (`webapp/`)
 
 Application **vanilla** (aucun framework, aucun build) à identité **DSFR**, qui
 interroge les Parquet directement dans le navigateur via **DuckDB-WASM**
@@ -124,6 +124,20 @@ Fonctionnalités clés :
   alliage/demi-produit → produit fini (batteries, aimants, catalyseurs…), avec
   **filtre par catégorie** et **recherche par code HS6**. *Rappel : un produit
   fini contient le minéral sans en indiquer la teneur.*
+- **Navigation** : barre de contrôle sticky en verre (logo Isec, onglets en
+  pilules), **palette de commandes** (`Ctrl`/`Cmd` + `K`) pour sauter à une vue
+  ou ouvrir directement le profil d'un pays, **combobox avec recherche**
+  remplaçant les `<select>` à liste longue (pays, chapitres HS), **puces de
+  filtres actifs** retirables, **squelettes de chargement** pendant les
+  requêtes DuckDB-WASM, bouton de retour en haut de page.
+
+### Piège hors-ligne : l'extension parquet de DuckDB
+
+DuckDB charge la lecture Parquet comme une extension **à la demande**, récupérée
+par défaut sur `extensions.duckdb.org`. Sans correctif, l'app n'est donc pas
+réellement hors-ligne dès qu'une requête `read_parquet(...)` s'exécute. Le
+correctif (`custom_extension_repository` pointé vers une copie locale de
+l'extension) est documenté dans `webapp/vendor/duckdb-wasm/README.md`.
 
 ### Développement : cache navigateur
 
@@ -160,16 +174,16 @@ New-Item -ItemType Junction -Path "webapp\data\parquet" -Target "data\parquet"
 ## Structure
 
 ```
-scraper/                # Phase 1 — extraction
+scraper/                # Phase 1, extraction
 ├── config.py           # Périmètre + paramètres + chemins
 ├── fetch_all.py        # Extraction par (reporter, année)
 ├── load_to_db.py        # Chargement fichiers → DuckDB
 └── reference_data.py    # Listes pays / codes HS / flux
-clean/                   # Phase 2/3 — nettoyage + export Parquet + libellés FR
+clean/                   # Phase 2/3, nettoyage + export Parquet + libellés FR
 ├── enrich.py           # Mapping code pays → ISO3 + continent
 ├── clean_export.py      # Export Parquet partitionné + enrichi (+ --critical)
 └── labels_fr.py          # Libellés FR (pays, chapitres HS, minéraux) → JSON
-webapp/                  # Phase 3 — application d'analyse offline (DSFR)
+webapp/                  # Phase 3, application d'analyse offline (DSFR)
 ├── index.html          # Coquille + onglets
 ├── css/, assets/         # Styles DSFR + police Marianne
 ├── vendor/               # DuckDB-WASM, Chart.js, apache-arrow, fond de carte

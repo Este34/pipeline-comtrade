@@ -72,7 +72,7 @@ export function interactiveMap(host, geojson, dataParAnnee, opts) {
       const iso3 = isoOf(lyr.feature);
       const v = valeursDe(annee).get(iso3) || 0;
       const nom = labelFn ? labelFn(iso3) : iso3;
-      lyr.bindTooltip(`<b>${esc(nom)}</b><br>${v > 0 ? fmt(v) : "—"}`, { sticky: true });
+      lyr.bindTooltip(`<b>${esc(nom)}</b><br>${v > 0 ? fmt(v) : "n.d."}`, { sticky: true });
     });
   }
 

@@ -1,5 +1,5 @@
 .env
-# Données brutes et bases (racine) — jamais commitées
+# Données brutes et bases (racine), jamais commitées
 /data/
 scraper.log
 venv/
@@ -9,5 +9,7 @@ __pycache__/
 # Webapp : exclure les gros binaires, garder le code + libellés FR
 # Parquet volumineux (jonction/copie vers /data/parquet en dev, copie au déploiement)
 webapp/data/parquet/
-# Binaire WASM DuckDB (~35 Mo) : re-téléchargeable, voir webapp/vendor/duckdb-wasm/README
+# Binaires WASM DuckDB (~35 Mo) et extension parquet (~2,8 Mo) : re-téléchargeables,
+# voir webapp/vendor/duckdb-wasm/README.md
 webapp/vendor/duckdb-wasm/*.wasm
+webapp/vendor/duckdb-wasm/extensions/

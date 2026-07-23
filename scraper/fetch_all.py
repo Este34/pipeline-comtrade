@@ -102,7 +102,7 @@ def tenter_telechargement(cmd_codes, reporter_code, annee):
                     countOnly=None,
                     includeDesc=True,
                 )
-        except Exception as e:  # noqa: BLE001 — on veut capturer toute erreur pour le retry
+        except Exception as e:  # noqa: BLE001 (on veut capturer toute erreur pour le retry)
             derniere_erreur = f"{type(e).__name__}: {e}"
 
         if df is not None:
@@ -117,7 +117,7 @@ def tenter_telechargement(cmd_codes, reporter_code, annee):
         if tentative < config.MAX_RETRIES:
             attente = config.BACKOFF_BASE**tentative
             logging.warning(
-                "%s %s tentative %d/%d échouée (%s) — nouvel essai dans %ds",
+                "%s %s tentative %d/%d échouée (%s), nouvel essai dans %ds",
                 reporter_code,
                 annee,
                 tentative,
