@@ -179,6 +179,14 @@ gh release create donnees-v1 dist/webapp-assets.tar.gz --notes "Parquet Comtrade
 # 3. Connecter le dépôt à Vercel : aucun réglage à saisir, vercel.json fait tout.
 ```
 
+**Si le dépôt est privé.** Les assets d'une release privée ne sont pas
+téléchargeables en accès anonyme : le build recevrait un 404. Créer un jeton
+GitHub à portée `Contents: read` sur ce dépôt, puis l'ajouter dans les réglages
+Vercel du projet en variable d'environnement `GITHUB_TOKEN`. `deploy/build.sh`
+détecte sa présence et bascule sur l'API GitHub authentifiée. Sans jeton, il
+utilise l'URL de téléchargement publique. Rendre le dépôt public dispense
+entièrement de cette étape.
+
 Après un ré-export des données, republier l'archive puis redéployer :
 
 ```bash

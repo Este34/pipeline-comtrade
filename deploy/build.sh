@@ -7,12 +7,34 @@
 # de 100 Mo d'upload de sources sur le plan Hobby.
 set -euo pipefail
 
+DEPOT="${ASSETS_REPO:-Este34/pipeline-comtrade}"
 TAG="${ASSETS_TAG:-donnees-v1}"
 ARCHIVE="webapp-assets.tar.gz"
-URL="https://github.com/Este34/pipeline-comtrade/releases/download/${TAG}/${ARCHIVE}"
 
-echo "Téléchargement des données (release ${TAG}) : ${URL}"
-curl -fsSL --retry 3 --retry-delay 2 "${URL}" | tar -xzf - -C webapp
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+  # Dépôt privé : les assets ne sont pas servis en accès anonyme. Il faut passer
+  # par l'API, qui exige l'identifiant numérique de l'asset (l'URL /releases/
+  # download/ ne fonctionne pas avec un jeton). Node est toujours présent dans
+  # le conteneur de build Vercel, contrairement à jq.
+  echo "Dépôt privé : résolution de l'asset ${ARCHIVE} (release ${TAG}) via l'API."
+  ASSET_ID=$(
+    curl -fsSL -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+      "https://api.github.com/repos/${DEPOT}/releases/tags/${TAG}" |
+      node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{
+        const a=(JSON.parse(d).assets||[]).find(x=>x.name===process.argv[1]);
+        if(!a){console.error("Asset "+process.argv[1]+" absent de la release.");process.exit(1)}
+        console.log(a.id)})' "${ARCHIVE}"
+  )
+  SOURCE="https://api.github.com/repos/${DEPOT}/releases/assets/${ASSET_ID}"
+  ENTETES=(-H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/octet-stream")
+else
+  # Dépôt public : URL de téléchargement directe, aucun jeton nécessaire.
+  SOURCE="https://github.com/${DEPOT}/releases/download/${TAG}/${ARCHIVE}"
+  ENTETES=()
+fi
+
+echo "Téléchargement des données (release ${TAG})..."
+curl -fsSL --retry 3 --retry-delay 2 "${ENTETES[@]}" "${SOURCE}" | tar -xzf - -C webapp
 
 # Vérification explicite : sans ce garde-fou, un build qui réussit avec une
 # archive incomplète produirait un site cassé seulement à l'exécution, avec des
