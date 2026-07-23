@@ -282,7 +282,15 @@ td[data-sume]::after{content:' %'}
 .bar-cell{position:relative}
 .bar-cell .bar{position:absolute;left:0;top:0;bottom:0;background:var(--blue-light);z-index:0}
 .bar-cell span{position:relative;z-index:1}
-/* choroplèthe SVG */
+/* carte Leaflet interactive */
+.map-box{width:100%;height:460px;border-radius:8px;border:1px solid var(--border);z-index:0}
+.map-controls{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.map-controls .map-slider{flex:1;accent-color:var(--blue-france)}
+.map-controls .map-year{font-weight:700;color:var(--dark);min-width:48px;text-align:right}
+.map-play{padding:6px 14px}
+.leaflet-container{font:inherit}
+
+/* choroplèthe SVG (héritage, encore utilisée en repli) */
 .choropleth{width:100%;height:auto;background:#eaf0f8;border-radius:8px;border:1px solid var(--border)}
 .choropleth path{stroke:#fff;stroke-width:.3;fill:#d9deec;transition:fill .2s}
 .choropleth path.hl{stroke:#333;stroke-width:.6}

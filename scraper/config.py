@@ -65,52 +65,72 @@ RAW_CRITICAL_DIR = DATA_DIR / "raw_critical"
 PROGRESS_CRITICAL_FILE = CHECKPOINTS_DIR / "progress_critical.json"
 FAILED_CRITICAL_FILE = CHECKPOINTS_DIR / "failed_critical.json"
 
-# Liste curée de codes HS6 de minéraux/matières critiques (tous validés dans la
-# référence Comtrade 'cmd:HS'). Un minéral peut couvrir plusieurs codes
-# (minerai, oxyde, métal brut). Base : listes UE/USGS des matières premières
-# critiques, restreintes aux formes primaires (minerais, concentrés, oxydes,
-# métaux bruts) pertinentes pour une analyse de dépendance d'approvisionnement.
+# Catégories de la chaîne de valeur (utilisées comme filtre dans la webapp).
+CAT_MP = "Matière première"          # minerais, concentrés, oxydes, sels
+CAT_ALLIAGE = "Alliage / demi-produit"  # ferro-alliages, métal brut/ouvré, poudres, déchets
+CAT_FINI = "Produit fini"             # batteries, aimants, catalyseurs, condensateurs, PV
+
+# Liste curée élargie de codes HS6 (tous validés dans la référence Comtrade
+# 'cmd:HS'), couvrant la chaîne : matière première → alliage/demi-produit →
+# produit fini embarquant le minéral. Base : listes UE/USGS des matières
+# premières critiques. Rappel : les stats douanières classent par PRODUIT, pas
+# par teneur — les produits finis « contiennent » le minéral sans en donner la
+# quantité embarquée.
+# Structure : (minéral, catégorie, [codes HS6]).
+_CRITICAL_GROUPS = [
+    ("Lithium", CAT_MP, ["282520", "283691", "284530"]),
+    ("Lithium", CAT_FINI, ["850650", "850760"]),
+    ("Cobalt", CAT_MP, ["260500", "282200", "282734"]),
+    ("Cobalt", CAT_ALLIAGE, ["810510", "810520", "810530", "810590"]),
+    ("Terres rares", CAT_MP, ["280530", "284610", "284690"]),
+    ("Terres rares", CAT_ALLIAGE, ["360690"]),
+    ("Terres rares", CAT_FINI, ["850511", "850519"]),  # aimants permanents (NdFeB dominant)
+    ("Graphite", CAT_MP, ["250410", "250490", "380110", "380120", "380190"]),
+    ("Tungstène", CAT_MP, ["261100", "284180"]),
+    ("Tungstène", CAT_ALLIAGE, ["720280", "810110", "810191", "810194", "810196", "810197", "810199"]),
+    ("Tungstène", CAT_FINI, ["853921", "853922"]),  # lampes à filament tungstène
+    ("Niobium, tantale, vanadium", CAT_MP, ["261590"]),
+    ("Niobium", CAT_ALLIAGE, ["720293"]),
+    ("Tantale", CAT_ALLIAGE, ["810310", "810320", "810330", "810390", "810391", "810399"]),
+    ("Tantale", CAT_FINI, ["853221"]),  # condensateurs au tantale
+    ("Vanadium", CAT_MP, ["262050", "282530"]),
+    ("Vanadium", CAT_ALLIAGE, ["720292", "811240"]),
+    ("Nickel", CAT_MP, ["260400", "282540", "282735", "283324"]),
+    ("Nickel", CAT_ALLIAGE, ["750110", "750120", "750210", "750220", "750300", "750400", "750511", "750512"]),
+    ("Nickel", CAT_FINI, ["381511", "381519", "850730", "850750"]),  # catalyseurs, batteries NiCd/NiMH
+    ("Manganèse", CAT_MP, ["260200", "282010", "282090"]),
+    ("Manganèse", CAT_ALLIAGE, ["720211", "720219", "720230", "811100"]),
+    ("Manganèse", CAT_FINI, ["850610", "850611"]),  # piles au dioxyde de manganèse
+    ("Titane", CAT_MP, ["261400", "282300", "320611", "320619"]),
+    ("Titane", CAT_ALLIAGE, ["720291", "810810", "810820", "810830", "810890"]),
+    ("Chrome", CAT_MP, ["261000", "281910", "281990", "283323"]),
+    ("Chrome", CAT_ALLIAGE, ["720241", "720249", "720250", "811221", "811222", "811229"]),
+    ("Platine", CAT_ALLIAGE, ["711011", "711019", "711292"]),
+    ("Platine", CAT_FINI, ["711510"]),  # catalyseurs en toile de platine
+    ("Palladium", CAT_ALLIAGE, ["711021", "711029"]),
+    ("Rhodium", CAT_ALLIAGE, ["711031", "711039"]),
+    ("Iridium, osmium, ruthénium", CAT_ALLIAGE, ["711041", "711049"]),
+    ("Antimoine", CAT_MP, ["261710", "282580"]),
+    ("Antimoine", CAT_ALLIAGE, ["811010", "811020", "811090"]),
+    ("Magnésium", CAT_MP, ["251910", "251990", "281610", "282731"]),
+    ("Magnésium", CAT_ALLIAGE, ["810411", "810419", "810420", "810430", "810490"]),
+    ("Silicium", CAT_MP, ["280461", "280469", "281122", "284920"]),
+    ("Silicium", CAT_ALLIAGE, ["720221", "720229"]),
+    ("Silicium", CAT_FINI, ["850171", "854141", "854143"]),  # générateurs PV, cellules photovoltaïques
+    ("Gallium, germanium, indium", CAT_MP, ["282560"]),
+    ("Gallium, germanium, indium", CAT_ALLIAGE, ["811230", "811292", "811299"]),
+    ("Béryllium", CAT_ALLIAGE, ["811211", "811212", "811213", "811219"]),
+    ("Molybdène", CAT_MP, ["261310", "261390", "282570", "284170"]),
+    ("Molybdène", CAT_ALLIAGE, ["720270", "810210", "810291", "810294", "810295", "810296", "810297", "810299"]),
+    ("Bismuth", CAT_MP, ["283422", "283693"]),
+    ("Bismuth", CAT_ALLIAGE, ["810600", "810610", "810690"]),
+]
+
+# code HS6 -> {"mineral": ..., "categorie": ...}
 CRITICAL_MINERALS_HS6 = {
-    "250410": "Graphite",
-    "250490": "Graphite",
-    "380110": "Graphite",
-    "251910": "Magnésium",
-    "251990": "Magnésium",
-    "280461": "Silicium",
-    "260200": "Manganèse",
-    "282010": "Manganèse",
-    "260400": "Nickel",
-    "282540": "Nickel",
-    "260500": "Cobalt",
-    "282200": "Cobalt",
-    "810510": "Cobalt",
-    "282520": "Lithium",
-    "283691": "Lithium",
-    "261100": "Tungstène",
-    "810191": "Tungstène",
-    "261590": "Niobium, tantale, vanadium",
-    "810310": "Tantale",
-    "810390": "Tantale",
-    "261400": "Titane",
-    "282300": "Titane",
-    "262050": "Vanadium",
-    "282530": "Vanadium",
-    "260300": "Cuivre",
-    "260800": "Zinc",
-    "260600": "Aluminium (bauxite)",
-    "261000": "Chrome",
-    "261710": "Antimoine",
-    "282580": "Antimoine",
-    "280530": "Terres rares",
-    "284610": "Terres rares",
-    "284690": "Terres rares",
-    "711011": "Platine",
-    "711021": "Palladium",
-    "711041": "Iridium, osmium, ruthénium",
-    "811211": "Béryllium",
-    "811230": "Germanium",
-    "811292": "Gallium, germanium, indium",
-    "282560": "Germanium, zirconium",
+    code: {"mineral": mineral, "categorie": cat}
+    for mineral, cat, codes in _CRITICAL_GROUPS
+    for code in codes
 }
 
 # Colonnes attendues dans une réponse valide de l'API

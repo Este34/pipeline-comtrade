@@ -154,12 +154,17 @@ def ecrire_json(nom: str, donnees: dict) -> None:
     print(f"  {nom:<22} {len(donnees)} entrées")
 
 
+def minerals_fr() -> dict:
+    """code HS6 -> {mineral, categorie} (depuis config, structure élargie)."""
+    return {code: dict(v) for code, v in config.CRITICAL_MINERALS_HS6.items()}
+
+
 def main() -> None:
     WEBAPP_REFERENCE_DIR.mkdir(parents=True, exist_ok=True)
     print("Génération des libellés FR (webapp/data/reference/) :")
     ecrire_json("countries_fr.json", countries_fr())
     ecrire_json("hs_chapters_fr.json", HS_CHAPITRES_FR)
-    ecrire_json("minerals_fr.json", dict(config.CRITICAL_MINERALS_HS6))
+    ecrire_json("minerals_fr.json", minerals_fr())
     ecrire_json("flows_fr.json", {"M": "Importations", "X": "Exportations"})
 
 

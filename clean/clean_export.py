@@ -134,9 +134,12 @@ def afficher_resume(con: duckdb.DuckDBPyConnection, codes_sans_continent: int) -
 
 
 def enregistrer_mineraux(con: duckdb.DuckDBPyConnection) -> None:
-    """Enregistre la correspondance code HS6 -> minéral FR comme table DuckDB."""
+    """Enregistre la correspondance code HS6 -> minéral + catégorie comme table."""
     df = pd.DataFrame(
-        [{"cmdCode": k, "mineral": v} for k, v in config.CRITICAL_MINERALS_HS6.items()]
+        [
+            {"cmdCode": k, "mineral": v["mineral"], "categorie": v["categorie"]}
+            for k, v in config.CRITICAL_MINERALS_HS6.items()
+        ]
     )
     con.register("min_view", df)
     con.execute("CREATE TEMP TABLE mineraux AS SELECT * FROM min_view")
@@ -163,7 +166,7 @@ def exporter_critical(con: duckdb.DuckDBPyConnection) -> None:
                 SELECT t.*,
                     er.iso3 AS reporterISO3, er.continent AS reporterContinent,
                     ep.iso3 AS partnerISO3, ep.continent AS partnerContinent,
-                    m.mineral AS mineral
+                    m.mineral AS mineral, m.categorie AS categorie
                 FROM trade_critical t
                 LEFT JOIN enrich er ON er.code = t.reporterCode
                 LEFT JOIN enrich ep ON ep.code = t.partnerCode

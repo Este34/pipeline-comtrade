@@ -1,13 +1,16 @@
-// Vue « Minéraux critiques » : pour un minéral (dataset HS6 dédié), pays
-// producteurs/exportateurs, concentration des approvisionnements, évolution,
-// et carte mondiale.
+// Vue « Minéraux critiques » : pour un minéral (dataset HS6 dédié, chaîne
+// matière→alliage→produit fini), pays producteurs/exportateurs, concentration
+// des approvisionnements, évolution animée sur la carte, et recherche par code.
 import { query, srcCritical, sqlStr } from "../db.js";
-import { fmtUSD, pct, downloadCsv } from "../format.js";
+import { fmtMetric, axisFmt, pct, downloadCsv } from "../format.js";
 import { pays } from "../labels.js";
 import {
-  selectHTML, anneeOptions, fluxOptions, ctrl, kpisHTML, renderTable, card, ANNEES,
+  selectHTML, anneeOptions, fluxOptions, metricOptions, ctrl, kpisHTML, renderTable, card, ANNEES,
 } from "../ui.js";
-import { barChart, lineChart, choropleth } from "../charts.js";
+import { barChart, lineChart } from "../charts.js";
+import { interactiveMap } from "../map.js";
+
+const CATEGORIES = ["Matière première", "Alliage / demi-produit", "Produit fini"];
 
 let _geo = null;
 async function geo() {
@@ -16,7 +19,7 @@ async function geo() {
 }
 
 function mineralOptions(labels) {
-  const uniques = [...new Set(Object.values(labels.minerals))].sort((a, b) => a.localeCompare(b, "fr"));
+  const uniques = [...new Set(Object.values(labels.minerals).map((v) => v.mineral))].sort((a, b) => a.localeCompare(b, "fr"));
   return uniques.map((m) => ({ value: m, label: m }));
 }
 
@@ -24,101 +27,113 @@ export async function mount(container, { labels }) {
   container.innerHTML = `
     <div class="filterbar">
       ${ctrl("Minéral critique", selectHTML("mc-min", mineralOptions(labels), "Lithium"), true)}
+      <div class="ctrl grow"><label>Catégories (chaîne de valeur)</label>
+        <select id="mc-cat" multiple size="3">
+          ${CATEGORIES.map((c) => `<option value="${c}" selected>${c}</option>`).join("")}
+        </select></div>
+      ${ctrl("Recherche code HS6 (optionnel)", '<input id="mc-code" type="text" placeholder="ex: 850760" />')}
       ${ctrl("Année", selectHTML("mc-annee", anneeOptions(), 2023))}
       ${ctrl("Flux", selectHTML("mc-flux", fluxOptions(), "X"))}
+      ${ctrl("Mesure", selectHTML("mc-metric", metricOptions(), "valeur"))}
       <button class="btn" id="mc-go">Analyser</button>
     </div>
-    <div class="note">Données au niveau HS6 (codes douaniers précis). Un minéral regroupe plusieurs
-      codes (minerai, oxyde, métal brut). « Concentration » = part cumulée des 5 premiers pays.</div>
+    <div class="note">Chaîne de valeur : matière première → alliage/demi-produit → produit fini.
+      Un code HS6 saisi prime sur le minéral (recherche directe). « Concentration » = part cumulée des 5 premiers pays.
+      Rappel : un produit fini <b>contient</b> le minéral sans en indiquer la teneur.</div>
     <div id="mc-res"></div>`;
 
   const res = container.querySelector("#mc-res");
 
+  function clauseFiltre() {
+    const code = container.querySelector("#mc-code").value.trim();
+    const cats = [...container.querySelector("#mc-cat").selectedOptions].map((o) => o.value);
+    const parts = [];
+    if (code) parts.push(`cmdCode LIKE ${sqlStr("%" + code + "%")}`);
+    else parts.push(`mineral = ${sqlStr(container.querySelector("#mc-min").value)}`);
+    if (cats.length && cats.length < CATEGORIES.length)
+      parts.push(`categorie IN (${cats.map(sqlStr).join(",")})`);
+    return parts.join(" AND ");
+  }
+
   async function analyser() {
-    const mineral = container.querySelector("#mc-min").value;
     const annee = Number(container.querySelector("#mc-annee").value);
     const flux = container.querySelector("#mc-flux").value;
+    const metric = container.querySelector("#mc-metric").value;
+    const code = container.querySelector("#mc-code").value.trim();
+    const titreCible = code ? `code ${code}` : container.querySelector("#mc-min").value;
     res.innerHTML = `<div class="loading">Analyse en cours…</div>`;
 
-    const M = sqlStr(mineral), F = sqlStr(flux);
+    const F = sqlStr(flux);
+    const filtre = clauseFiltre();
+    const fmt = axisFmt(metric);
+    const disp = (v) => fmtMetric(v, metric);
     const fluxLabel = flux === "X" ? "exportateurs" : "importateurs";
 
-    // Classement pays (partenaire World = total par pays).
+    // Toutes les années × pays (alimente carte + classement + évolution).
     const rows = await query(`
-      SELECT reporterISO3, SUM(primaryValue) v FROM ${srcCritical([annee])}
-      WHERE mineral = ${M} AND flowCode = ${F} AND partnerCode = '0'
-        AND reporterISO3 IS NOT NULL
-      GROUP BY reporterISO3 ORDER BY v DESC`);
+      SELECT period, reporterISO3, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcCritical(ANNEES)}
+      WHERE ${filtre} AND flowCode = ${F} AND partnerCode = '0' AND reporterISO3 IS NOT NULL
+      GROUP BY period, reporterISO3`);
+
+    const parAnnee = new Map(ANNEES.map((y) => [y, new Map()]));
+    for (const r of rows) parAnnee.get(r.period)?.set(r.reporterISO3, r[metric] || 0);
+
+    // Classement de l'année sélectionnée.
+    const classement = [...parAnnee.get(annee).entries()]
+      .map(([iso3, v]) => ({ iso3, v }))
+      .filter((r) => r.v > 0)
+      .sort((a, b) => b.v - a.v);
+    const total = classement.reduce((s, r) => s + r.v, 0);
+    const top5 = classement.slice(0, 5).reduce((s, r) => s + r.v, 0);
 
     // Évolution mondiale.
-    const evo = await query(`
-      SELECT period, SUM(primaryValue) v FROM ${srcCritical(ANNEES)}
-      WHERE mineral = ${M} AND flowCode = ${F} AND partnerCode = '0'
-      GROUP BY period ORDER BY period`);
-    const evoMap = new Map(evo.map((r) => [r.period, r.v]));
-
-    const total = rows.reduce((s, r) => s + r.v, 0);
-    const top5 = rows.slice(0, 5).reduce((s, r) => s + r.v, 0);
+    const evoMap = new Map(ANNEES.map((y) => [y, [...parAnnee.get(y).values()].reduce((s, v) => s + v, 0)]));
 
     res.innerHTML = "";
 
     const kpiWrap = document.createElement("div");
     kpiWrap.innerHTML = kpisHTML(
       [
-        { label: `Commerce mondial ${flux === "X" ? "(export)" : "(import)"} ${annee}`, value: fmtUSD(total) },
-        { label: "Nombre de pays actifs", value: String(rows.length) },
-        { label: "Concentration (top 5)", value: pct(top5, total), cls: top5 / total > 0.7 ? "neg" : "" },
+        { label: `Commerce mondial ${flux === "X" ? "(export)" : "(import)"} ${annee}`, value: disp(total) },
+        { label: "Nombre de pays actifs", value: String(classement.length) },
+        { label: "Concentration (top 5)", value: pct(top5, total), cls: total && top5 / total > 0.7 ? "neg" : "" },
       ],
       3
     );
     res.appendChild(kpiWrap);
 
-    const top = rows.slice(0, 20);
-    const cBar = card(`Top 20 ${fluxLabel} — ${mineral} (${annee})`, "mc-rank");
+    const top = classement.slice(0, 20);
+    const cBar = card(`Top 20 ${fluxLabel} — ${titreCible} (${annee})`, "mc-rank");
     res.appendChild(cBar);
-    barChart(
-      cBar.querySelector(".card-body"),
-      top.map((r) => pays(labels, r.reporterISO3)),
-      top.map((r) => r.v),
-      "Valeur (US$)"
-    );
+    barChart(cBar.querySelector(".card-body"), top.map((r) => pays(labels, r.iso3)), top.map((r) => r.v), metric === "poids" ? "Poids" : "Valeur", fmt);
 
-    const cMap = card(`Carte mondiale — ${mineral} (${annee})`, "mc-map");
+    const cMap = card(`Carte animée — ${titreCible} (2000→2025)`, "mc-map");
     res.appendChild(cMap);
-    choropleth(cMap.querySelector(".card-body"), await geo(), new Map(rows.map((r) => [r.reporterISO3, r.v])), (iso3) => pays(labels, iso3));
+    interactiveMap(cMap.querySelector(".card-body"), await geo(), parAnnee, {
+      annees: ANNEES, metric, labelFn: (iso3) => pays(labels, iso3), fmt,
+    });
 
-    const cEvo = card(`Évolution mondiale — ${mineral}`, "mc-evo");
+    const cEvo = card(`Évolution mondiale — ${titreCible}`, "mc-evo");
     res.appendChild(cEvo);
-    lineChart(cEvo.querySelector(".card-body"), ANNEES, [{ label: mineral, data: ANNEES.map((y) => evoMap.get(y) || 0) }]);
+    lineChart(cEvo.querySelector(".card-body"), ANNEES, [{ label: titreCible, data: ANNEES.map((y) => evoMap.get(y)) }], fmt);
 
-    const cTable = card(`Classement détaillé — ${mineral} (${annee})`, "mc-table");
+    const cTable = card(`Classement détaillé — ${titreCible} (${annee})`, "mc-table");
     res.appendChild(cTable);
-    const lignes = top.map((r, i) => ({
-      rang: i + 1,
-      pays: pays(labels, r.reporterISO3),
-      iso3: r.reporterISO3,
-      valeur: r.v,
-      part: pct(r.v, total),
-    }));
+    const lignes = top.map((r, i) => ({ rang: i + 1, pays: pays(labels, r.iso3), iso3: r.iso3, mesure: r.v, part: pct(r.v, total) }));
     renderTable(cTable.querySelector(".card-body"), [
       { key: "rang", label: "Rang" },
       { key: "pays", label: "Pays" },
-      { key: "valeur", label: "Valeur", render: (r) => `<span>${fmtUSD(r.valeur)}</span>` },
+      { key: "mesure", label: metric === "poids" ? "Poids" : "Valeur", render: (r) => `<span>${disp(r.mesure)}</span>` },
       { key: "part", label: "Part mondiale" },
     ], lignes);
 
-    cBar.querySelector("[data-export]").addEventListener("click", () =>
-      downloadCsv(`mineral_${mineral}_${annee}_${flux}.csv`, rows.map((r, i) => ({ rang: i + 1, pays: pays(labels, r.reporterISO3), iso3: r.reporterISO3, valeur_usd: Math.round(r.v) })))
-    );
-    cEvo.querySelector("[data-export]").addEventListener("click", () =>
-      downloadCsv(`mineral_evolution_${mineral}_${flux}.csv`, ANNEES.map((y) => ({ annee: y, valeur_usd: Math.round(evoMap.get(y) || 0) })))
-    );
+    const expClass = classement.map((r, i) => ({ rang: i + 1, pays: pays(labels, r.iso3), iso3: r.iso3, mesure: Math.round(r.v) }));
+    cBar.querySelector("[data-export]").addEventListener("click", () => downloadCsv(`mineral_${titreCible}_${annee}_${flux}.csv`, expClass));
     cMap.querySelector("[data-export]").addEventListener("click", () =>
-      downloadCsv(`mineral_carte_${mineral}_${annee}_${flux}.csv`, rows.map((r) => ({ pays: pays(labels, r.reporterISO3), iso3: r.reporterISO3, valeur_usd: Math.round(r.v) })))
+      downloadCsv(`mineral_carte_${titreCible}_${flux}.csv`, rows.map((r) => ({ annee: r.period, pays: pays(labels, r.reporterISO3), iso3: r.reporterISO3, valeur_usd: Math.round(r.valeur || 0), poids_kg: Math.round(r.poids || 0) })))
     );
-    cTable.querySelector("[data-export]").addEventListener("click", () =>
-      downloadCsv(`mineral_detail_${mineral}_${annee}_${flux}.csv`, lignes.map((l) => ({ rang: l.rang, pays: l.pays, iso3: l.iso3, valeur_usd: Math.round(l.valeur), part: l.part })))
-    );
+    cEvo.querySelector("[data-export]").addEventListener("click", () => downloadCsv(`mineral_evolution_${titreCible}_${flux}.csv`, ANNEES.map((y) => ({ annee: y, mesure: Math.round(evoMap.get(y)) }))));
+    cTable.querySelector("[data-export]").addEventListener("click", () => downloadCsv(`mineral_detail_${titreCible}_${annee}_${flux}.csv`, expClass));
   }
 
   container.querySelector("#mc-go").addEventListener("click", analyser);

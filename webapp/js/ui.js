@@ -31,6 +31,14 @@ export function fluxOptions() {
   ];
 }
 
+// Bascule métrique Valeur (US$) / Poids (t). Rendue comme un <select> étiqueté.
+export function metricOptions() {
+  return [
+    { value: "valeur", label: "Valeur (US$)" },
+    { value: "poids", label: "Poids (t)" },
+  ];
+}
+
 // Un bloc contrôle étiqueté (label + champ).
 export function ctrl(labelText, innerHTML, grow = false) {
   return `<div class="ctrl${grow ? " grow" : ""}"><label>${esc(labelText)}</label>${innerHTML}</div>`;

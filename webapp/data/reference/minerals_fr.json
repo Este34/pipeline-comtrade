@@ -1,42 +1,598 @@
 {
-  "250410": "Graphite",
-  "250490": "Graphite",
-  "251910": "Magnésium",
-  "251990": "Magnésium",
-  "260200": "Manganèse",
-  "260300": "Cuivre",
-  "260400": "Nickel",
-  "260500": "Cobalt",
-  "260600": "Aluminium (bauxite)",
-  "260800": "Zinc",
-  "261000": "Chrome",
-  "261100": "Tungstène",
-  "261400": "Titane",
-  "261590": "Niobium, tantale, vanadium",
-  "261710": "Antimoine",
-  "262050": "Vanadium",
-  "280461": "Silicium",
-  "280530": "Terres rares",
-  "282010": "Manganèse",
-  "282200": "Cobalt",
-  "282300": "Titane",
-  "282520": "Lithium",
-  "282530": "Vanadium",
-  "282540": "Nickel",
-  "282560": "Germanium, zirconium",
-  "282580": "Antimoine",
-  "283691": "Lithium",
-  "284610": "Terres rares",
-  "284690": "Terres rares",
-  "380110": "Graphite",
-  "711011": "Platine",
-  "711021": "Palladium",
-  "711041": "Iridium, osmium, ruthénium",
-  "810191": "Tungstène",
-  "810310": "Tantale",
-  "810390": "Tantale",
-  "810510": "Cobalt",
-  "811211": "Béryllium",
-  "811230": "Germanium",
-  "811292": "Gallium, germanium, indium"
+  "250410": {
+    "categorie": "Matière première",
+    "mineral": "Graphite"
+  },
+  "250490": {
+    "categorie": "Matière première",
+    "mineral": "Graphite"
+  },
+  "251910": {
+    "categorie": "Matière première",
+    "mineral": "Magnésium"
+  },
+  "251990": {
+    "categorie": "Matière première",
+    "mineral": "Magnésium"
+  },
+  "260200": {
+    "categorie": "Matière première",
+    "mineral": "Manganèse"
+  },
+  "260400": {
+    "categorie": "Matière première",
+    "mineral": "Nickel"
+  },
+  "260500": {
+    "categorie": "Matière première",
+    "mineral": "Cobalt"
+  },
+  "261000": {
+    "categorie": "Matière première",
+    "mineral": "Chrome"
+  },
+  "261100": {
+    "categorie": "Matière première",
+    "mineral": "Tungstène"
+  },
+  "261310": {
+    "categorie": "Matière première",
+    "mineral": "Molybdène"
+  },
+  "261390": {
+    "categorie": "Matière première",
+    "mineral": "Molybdène"
+  },
+  "261400": {
+    "categorie": "Matière première",
+    "mineral": "Titane"
+  },
+  "261590": {
+    "categorie": "Matière première",
+    "mineral": "Niobium, tantale, vanadium"
+  },
+  "261710": {
+    "categorie": "Matière première",
+    "mineral": "Antimoine"
+  },
+  "262050": {
+    "categorie": "Matière première",
+    "mineral": "Vanadium"
+  },
+  "280461": {
+    "categorie": "Matière première",
+    "mineral": "Silicium"
+  },
+  "280469": {
+    "categorie": "Matière première",
+    "mineral": "Silicium"
+  },
+  "280530": {
+    "categorie": "Matière première",
+    "mineral": "Terres rares"
+  },
+  "281122": {
+    "categorie": "Matière première",
+    "mineral": "Silicium"
+  },
+  "281610": {
+    "categorie": "Matière première",
+    "mineral": "Magnésium"
+  },
+  "281910": {
+    "categorie": "Matière première",
+    "mineral": "Chrome"
+  },
+  "281990": {
+    "categorie": "Matière première",
+    "mineral": "Chrome"
+  },
+  "282010": {
+    "categorie": "Matière première",
+    "mineral": "Manganèse"
+  },
+  "282090": {
+    "categorie": "Matière première",
+    "mineral": "Manganèse"
+  },
+  "282200": {
+    "categorie": "Matière première",
+    "mineral": "Cobalt"
+  },
+  "282300": {
+    "categorie": "Matière première",
+    "mineral": "Titane"
+  },
+  "282520": {
+    "categorie": "Matière première",
+    "mineral": "Lithium"
+  },
+  "282530": {
+    "categorie": "Matière première",
+    "mineral": "Vanadium"
+  },
+  "282540": {
+    "categorie": "Matière première",
+    "mineral": "Nickel"
+  },
+  "282560": {
+    "categorie": "Matière première",
+    "mineral": "Gallium, germanium, indium"
+  },
+  "282570": {
+    "categorie": "Matière première",
+    "mineral": "Molybdène"
+  },
+  "282580": {
+    "categorie": "Matière première",
+    "mineral": "Antimoine"
+  },
+  "282731": {
+    "categorie": "Matière première",
+    "mineral": "Magnésium"
+  },
+  "282734": {
+    "categorie": "Matière première",
+    "mineral": "Cobalt"
+  },
+  "282735": {
+    "categorie": "Matière première",
+    "mineral": "Nickel"
+  },
+  "283323": {
+    "categorie": "Matière première",
+    "mineral": "Chrome"
+  },
+  "283324": {
+    "categorie": "Matière première",
+    "mineral": "Nickel"
+  },
+  "283422": {
+    "categorie": "Matière première",
+    "mineral": "Bismuth"
+  },
+  "283691": {
+    "categorie": "Matière première",
+    "mineral": "Lithium"
+  },
+  "283693": {
+    "categorie": "Matière première",
+    "mineral": "Bismuth"
+  },
+  "284170": {
+    "categorie": "Matière première",
+    "mineral": "Molybdène"
+  },
+  "284180": {
+    "categorie": "Matière première",
+    "mineral": "Tungstène"
+  },
+  "284530": {
+    "categorie": "Matière première",
+    "mineral": "Lithium"
+  },
+  "284610": {
+    "categorie": "Matière première",
+    "mineral": "Terres rares"
+  },
+  "284690": {
+    "categorie": "Matière première",
+    "mineral": "Terres rares"
+  },
+  "284920": {
+    "categorie": "Matière première",
+    "mineral": "Silicium"
+  },
+  "320611": {
+    "categorie": "Matière première",
+    "mineral": "Titane"
+  },
+  "320619": {
+    "categorie": "Matière première",
+    "mineral": "Titane"
+  },
+  "360690": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Terres rares"
+  },
+  "380110": {
+    "categorie": "Matière première",
+    "mineral": "Graphite"
+  },
+  "380120": {
+    "categorie": "Matière première",
+    "mineral": "Graphite"
+  },
+  "380190": {
+    "categorie": "Matière première",
+    "mineral": "Graphite"
+  },
+  "381511": {
+    "categorie": "Produit fini",
+    "mineral": "Nickel"
+  },
+  "381519": {
+    "categorie": "Produit fini",
+    "mineral": "Nickel"
+  },
+  "711011": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Platine"
+  },
+  "711019": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Platine"
+  },
+  "711021": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Palladium"
+  },
+  "711029": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Palladium"
+  },
+  "711031": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Rhodium"
+  },
+  "711039": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Rhodium"
+  },
+  "711041": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Iridium, osmium, ruthénium"
+  },
+  "711049": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Iridium, osmium, ruthénium"
+  },
+  "711292": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Platine"
+  },
+  "711510": {
+    "categorie": "Produit fini",
+    "mineral": "Platine"
+  },
+  "720211": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Manganèse"
+  },
+  "720219": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Manganèse"
+  },
+  "720221": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Silicium"
+  },
+  "720229": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Silicium"
+  },
+  "720230": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Manganèse"
+  },
+  "720241": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Chrome"
+  },
+  "720249": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Chrome"
+  },
+  "720250": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Chrome"
+  },
+  "720270": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Molybdène"
+  },
+  "720280": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tungstène"
+  },
+  "720291": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Titane"
+  },
+  "720292": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Vanadium"
+  },
+  "720293": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Niobium"
+  },
+  "750110": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Nickel"
+  },
+  "750120": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Nickel"
+  },
+  "750210": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Nickel"
+  },
+  "750220": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Nickel"
+  },
+  "750300": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Nickel"
+  },
+  "750400": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Nickel"
+  },
+  "750511": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Nickel"
+  },
+  "750512": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Nickel"
+  },
+  "810110": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tungstène"
+  },
+  "810191": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tungstène"
+  },
+  "810194": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tungstène"
+  },
+  "810196": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tungstène"
+  },
+  "810197": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tungstène"
+  },
+  "810199": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tungstène"
+  },
+  "810210": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Molybdène"
+  },
+  "810291": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Molybdène"
+  },
+  "810294": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Molybdène"
+  },
+  "810295": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Molybdène"
+  },
+  "810296": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Molybdène"
+  },
+  "810297": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Molybdène"
+  },
+  "810299": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Molybdène"
+  },
+  "810310": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tantale"
+  },
+  "810320": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tantale"
+  },
+  "810330": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tantale"
+  },
+  "810390": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tantale"
+  },
+  "810391": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tantale"
+  },
+  "810399": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Tantale"
+  },
+  "810411": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Magnésium"
+  },
+  "810419": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Magnésium"
+  },
+  "810420": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Magnésium"
+  },
+  "810430": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Magnésium"
+  },
+  "810490": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Magnésium"
+  },
+  "810510": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cobalt"
+  },
+  "810520": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cobalt"
+  },
+  "810530": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cobalt"
+  },
+  "810590": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cobalt"
+  },
+  "810600": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Bismuth"
+  },
+  "810610": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Bismuth"
+  },
+  "810690": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Bismuth"
+  },
+  "810810": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Titane"
+  },
+  "810820": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Titane"
+  },
+  "810830": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Titane"
+  },
+  "810890": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Titane"
+  },
+  "811010": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Antimoine"
+  },
+  "811020": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Antimoine"
+  },
+  "811090": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Antimoine"
+  },
+  "811100": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Manganèse"
+  },
+  "811211": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Béryllium"
+  },
+  "811212": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Béryllium"
+  },
+  "811213": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Béryllium"
+  },
+  "811219": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Béryllium"
+  },
+  "811221": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Chrome"
+  },
+  "811222": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Chrome"
+  },
+  "811229": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Chrome"
+  },
+  "811230": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Gallium, germanium, indium"
+  },
+  "811240": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Vanadium"
+  },
+  "811292": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Gallium, germanium, indium"
+  },
+  "811299": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Gallium, germanium, indium"
+  },
+  "850171": {
+    "categorie": "Produit fini",
+    "mineral": "Silicium"
+  },
+  "850511": {
+    "categorie": "Produit fini",
+    "mineral": "Terres rares"
+  },
+  "850519": {
+    "categorie": "Produit fini",
+    "mineral": "Terres rares"
+  },
+  "850610": {
+    "categorie": "Produit fini",
+    "mineral": "Manganèse"
+  },
+  "850611": {
+    "categorie": "Produit fini",
+    "mineral": "Manganèse"
+  },
+  "850650": {
+    "categorie": "Produit fini",
+    "mineral": "Lithium"
+  },
+  "850730": {
+    "categorie": "Produit fini",
+    "mineral": "Nickel"
+  },
+  "850750": {
+    "categorie": "Produit fini",
+    "mineral": "Nickel"
+  },
+  "850760": {
+    "categorie": "Produit fini",
+    "mineral": "Lithium"
+  },
+  "853221": {
+    "categorie": "Produit fini",
+    "mineral": "Tantale"
+  },
+  "853921": {
+    "categorie": "Produit fini",
+    "mineral": "Tungstène"
+  },
+  "853922": {
+    "categorie": "Produit fini",
+    "mineral": "Tungstène"
+  },
+  "854141": {
+    "categorie": "Produit fini",
+    "mineral": "Silicium"
+  },
+  "854143": {
+    "categorie": "Produit fini",
+    "mineral": "Silicium"
+  }
 }
