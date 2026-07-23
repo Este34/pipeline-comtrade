@@ -199,8 +199,15 @@ absente ou incomplète. Pour publier une nouvelle version des données sans écr
 l'ancienne, créer un tag `donnees-v2` et définir la variable d'environnement
 `ASSETS_TAG` dans les réglages Vercel du projet.
 
-`vercel.json` met aussi les Parquet et le `.wasm` en cache immuable (un an) :
-seule la première visite paie le téléchargement du moteur.
+**Cache : ne jamais marquer ces URL `immutable`.** Les chemins servis
+(`/data/parquet/aggregat/data.parquet`, `/vendor/...`) sont stables alors que
+leur contenu change à chaque ré-export. Un `Cache-Control: immutable` y colle
+la réponse dans le navigateur du visiteur pour un an sans aucune
+revalidation : si elle a été mise en cache pendant un déploiement cassé, le
+site reste cassé chez lui même une fois le correctif en ligne, et une simple
+recharge n'y suffit pas. `vercel.json` utilise donc `must-revalidate` avec un
+`max-age` court, ce qui laisse l'ETag renvoyer un 304 bon marché tant que le
+fichier n'a pas bougé, et la nouvelle version arriver dès qu'il change.
 
 **Note sur les en-têtes.** Les en-têtes de sécurité usuels (`nosniff`,
 `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) sont posés, mais pas
