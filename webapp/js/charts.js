@@ -92,3 +92,73 @@ function _compact(v) {
   if (n >= 1e3) return (v / 1e3).toFixed(0) + " k";
   return v;
 }
+
+// --- Choroplèthe SVG (projection équirectangulaire, échelle log) ---
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const MAP_W = 1000, MAP_H = 500;
+
+function _proj([lon, lat]) {
+  return [((lon + 180) / 360) * MAP_W, ((90 - lat) / 180) * MAP_H];
+}
+
+function _pathD(geom) {
+  const polys = geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
+  let d = "";
+  for (const poly of polys) {
+    for (const ring of poly) {
+      ring.forEach((pt, i) => {
+        const [x, y] = _proj(pt);
+        d += (i === 0 ? "M" : "L") + x.toFixed(1) + " " + y.toFixed(1);
+      });
+      d += "Z";
+    }
+  }
+  return d;
+}
+
+// Rampe de bleus (clair -> foncé) sur 6 paliers.
+const RAMP = ["#e3e3fd", "#b9c0f4", "#8f9de8", "#5f74d6", "#2f4ab8", "#000091"];
+
+// host: élément conteneur ; valeurs: Map(ISO3 -> nombre) ; labelFn(iso3)->nom.
+export function choropleth(host, geojson, valeurs, labelFn) {
+  host.innerHTML = "";
+  const vals = [...valeurs.values()].filter((v) => v > 0);
+  const min = vals.length ? Math.min(...vals) : 1;
+  const max = vals.length ? Math.max(...vals) : 1;
+  const lmin = Math.log10(min), lmax = Math.log10(max) || 1;
+  const bucket = (v) => {
+    if (!v || v <= 0) return -1;
+    const t = (Math.log10(v) - lmin) / (lmax - lmin || 1);
+    return Math.min(RAMP.length - 1, Math.max(0, Math.floor(t * RAMP.length)));
+  };
+
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${MAP_W} ${MAP_H}`);
+  svg.setAttribute("class", "choropleth");
+  const tip = document.createElementNS(SVG_NS, "title");
+
+  for (const f of geojson.features) {
+    const iso3 = f.id || f.properties?.ISO_A3 || f.properties?.iso_a3;
+    const v = valeurs.get(iso3) || 0;
+    const b = bucket(v);
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", _pathD(f.geometry));
+    if (b >= 0) path.style.fill = RAMP[b];
+    const t = document.createElementNS(SVG_NS, "title");
+    const nom = labelFn ? labelFn(iso3) : iso3;
+    t.textContent = v > 0 ? `${nom} : ${_compact(v)} $` : nom || "";
+    path.appendChild(t);
+    svg.appendChild(path);
+  }
+  host.appendChild(svg);
+
+  // Légende
+  const leg = document.createElement("div");
+  leg.className = "map-legend";
+  leg.innerHTML =
+    `<span>${_compact(min)} $</span>` +
+    RAMP.map((c) => `<i style="background:${c}"></i>`).join("") +
+    `<span>${_compact(max)} $</span>`;
+  host.appendChild(leg);
+}

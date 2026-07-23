@@ -4,7 +4,7 @@ Pipeline en 3 phases sur le commerce international :
 
 1. **Extraction massive** depuis l'API UN Comtrade — *fait*
 2. **Nettoyage + export Parquet** — *fait*
-3. Webapp d'analyse 100% offline (DuckDB-WASM + visualisations)
+3. **Webapp d'analyse 100% offline** (DuckDB-WASM) — *fait*
 
 ## Périmètre d'extraction
 
@@ -92,6 +92,50 @@ Chaque ligne de détail est enrichie de `reporterISO3`, `reporterContinent`,
 via `pycountry-convert` ; les codes spéciaux — World, zones *nes*, groupes — ont
 un continent nul, ce qui est attendu).
 
+## Minéraux critiques (dataset HS6 dédié)
+
+En complément des chapitres HS2, un dataset **HS6** cible ~40 codes de minéraux
+critiques (lithium, cobalt, terres rares, graphite, tungstène…), défini dans
+`scraper/config.py → CRITICAL_MINERALS_HS6`.
+
+```bash
+python scraper/fetch_all.py --critical     # extraction (tous pays, 2000-2025)
+python scraper/load_to_db.py --critical     # -> table trade_critical
+python clean/clean_export.py --critical      # -> data/parquet/critical/
+```
+
+## Phase 3 — webapp d'analyse offline (`webapp/`)
+
+Application **vanilla** (aucun framework, aucun build) à identité **DSFR**, qui
+interroge les Parquet directement dans le navigateur via **DuckDB-WASM**
+(vendorisé, 100 % hors-ligne). Cinq vues : Profil pays, Analyse bilatérale,
+Analyse par produit, Cartes & séries, Minéraux critiques. Libellés en français.
+
+### Générer les libellés FR puis lancer en local
+
+```bash
+python clean/labels_fr.py                    # webapp/data/reference/*.json (pays, chapitres, minéraux)
+python -m http.server 8000                    # depuis la RACINE du dépôt
+# puis ouvrir http://localhost:8000/webapp/
+```
+
+En développement, `webapp/data/parquet` est une **jonction** vers `data/parquet`
+(voir ci-dessous). Le binaire `webapp/vendor/duckdb-wasm/duckdb-eh.wasm` (~35 Mo)
+n'est pas commité : voir `webapp/vendor/duckdb-wasm/README.md` pour le récupérer.
+
+### Déploiement (dossier statique hébergeable)
+
+Copier dans un dossier autonome : tout `webapp/`, en remplaçant la jonction
+`webapp/data/parquet` par une **copie réelle** de `data/parquet/` (détail +
+aggregat + reference + critical) et en incluant le `.wasm`. Servir en HTTP
+(les hôtes statiques gèrent les *range requests* nécessaires à DuckDB-WASM).
+Aucune requête vers l'API Comtrade au runtime.
+
+Recréer la jonction de dev (Windows) si besoin :
+```powershell
+New-Item -ItemType Junction -Path "webapp\data\parquet" -Target "data\parquet"
+```
+
 ## Structure
 
 ```
@@ -100,14 +144,21 @@ scraper/                # Phase 1 — extraction
 ├── fetch_all.py        # Extraction par (reporter, année)
 ├── load_to_db.py        # Chargement fichiers → DuckDB
 └── reference_data.py    # Listes pays / codes HS / flux
-clean/                   # Phase 2 — nettoyage + export Parquet
+clean/                   # Phase 2/3 — nettoyage + export Parquet + libellés FR
 ├── enrich.py           # Mapping code pays → ISO3 + continent
-└── clean_export.py      # Export Parquet partitionné + enrichi
+├── clean_export.py      # Export Parquet partitionné + enrichi (+ --critical)
+└── labels_fr.py          # Libellés FR (pays, chapitres HS, minéraux) → JSON
+webapp/                  # Phase 3 — application d'analyse offline (DSFR)
+├── index.html          # Coquille + onglets
+├── css/, assets/         # Styles DSFR + police Marianne
+├── vendor/               # DuckDB-WASM, Chart.js, apache-arrow, fond de carte
+├── js/                    # db.js (DuckDB-WASM), charts, format, labels + views/
+└── data/                   # reference/*.json (FR) + parquet/ (jonction/copie)
 data/
-├── raw/                # Réponses brutes {reporterCode}_{year}.csv
-├── checkpoints/         # progress.json, failed.json, reporters_cache.csv
-├── comtrade.duckdb       # Base locale (Phase 1)
-└── parquet/             # Livrable Phase 2 (detail/, aggregat/, reference/)
+├── raw/, raw_critical/   # Réponses brutes {reporterCode}_{year}.csv
+├── checkpoints/           # progress*.json, failed*.json, reporters_cache.csv
+├── comtrade.duckdb         # Base locale (trade_records + trade_critical)
+└── parquet/               # detail/, aggregat/, reference/, critical/
 ```
 
 `data/` et `.env` sont exclus de git (voir `.gitignore`) : aucune clé ni

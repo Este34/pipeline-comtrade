@@ -1,23 +1,27 @@
 """
-Phase 2 : nettoyage léger + export Parquet depuis data/comtrade.duckdb.
+Phase 2/3 : nettoyage léger + export Parquet depuis data/comtrade.duckdb.
 
 Produit sous data/parquet/ :
-  - detail/period=YYYY/data.parquet  : détail complet enrichi, partitionné par année
-  - aggregat/data.parquet             : lignes agrégées (partenaire World ou cmd TOTAL)
-  - reference/*.parquet               : reporters, hs_codes, flows, continents
+  - detail/period=YYYY/data.parquet    : détail complet enrichi, partitionné par année
+  - aggregat/data.parquet               : lignes agrégées (partenaire World ou cmd TOTAL)
+  - reference/*.parquet                 : reporters, hs_codes, flows, continents
+  - critical/period=YYYY/data.parquet    : dataset HS6 minéraux critiques (--critical)
 
 Export 100 % natif DuckDB (COPY ... TO), sans round-trip pandas, pour tenir la
 volumétrie (~36 M lignes).
 
 Usage :
-    python clean/clean_export.py
+    python clean/clean_export.py               # dataset HS2 principal
+    python clean/clean_export.py --critical     # dataset HS6 minéraux critiques
 """
 
+import argparse
 import os
 import sys
 from pathlib import Path
 
 import duckdb
+import pandas as pd
 from tqdm import tqdm
 
 SCRAPER_DIR = Path(__file__).resolve().parent.parent / "scraper"
@@ -129,18 +133,91 @@ def afficher_resume(con: duckdb.DuckDBPyConnection, codes_sans_continent: int) -
     print(f"Taille totale       : {taille_repertoire(config.PARQUET_DIR) / 1024 / 1024:.1f} Mo")
 
 
+def enregistrer_mineraux(con: duckdb.DuckDBPyConnection) -> None:
+    """Enregistre la correspondance code HS6 -> minéral FR comme table DuckDB."""
+    df = pd.DataFrame(
+        [{"cmdCode": k, "mineral": v} for k, v in config.CRITICAL_MINERALS_HS6.items()]
+    )
+    con.register("min_view", df)
+    con.execute("CREATE TEMP TABLE mineraux AS SELECT * FROM min_view")
+    con.unregister("min_view")
+
+
+def exporter_critical(con: duckdb.DuckDBPyConnection) -> None:
+    """Exporte le dataset HS6 minéraux critiques, enrichi (ISO3, continent,
+    minéral FR), une partition Parquet par année."""
+    config.PARQUET_CRITICAL_DIR.mkdir(parents=True, exist_ok=True)
+    annees = [
+        r[0]
+        for r in con.execute(
+            "SELECT DISTINCT period FROM trade_critical ORDER BY period"
+        ).fetchall()
+    ]
+    for annee in tqdm(annees, desc="Export critical"):
+        dossier = config.PARQUET_CRITICAL_DIR / f"period={annee}"
+        dossier.mkdir(parents=True, exist_ok=True)
+        cible = (dossier / "data.parquet").as_posix()
+        con.execute(
+            f"""
+            COPY (
+                SELECT t.*,
+                    er.iso3 AS reporterISO3, er.continent AS reporterContinent,
+                    ep.iso3 AS partnerISO3, ep.continent AS partnerContinent,
+                    m.mineral AS mineral
+                FROM trade_critical t
+                LEFT JOIN enrich er ON er.code = t.reporterCode
+                LEFT JOIN enrich ep ON ep.code = t.partnerCode
+                LEFT JOIN mineraux m ON m.cmdCode = t.cmdCode
+                WHERE t.period = {annee}
+            )
+            TO '{cible}' (FORMAT PARQUET, COMPRESSION ZSTD)
+            """
+        )
+
+
+def afficher_resume_critical(con: duckdb.DuckDBPyConnection) -> None:
+    glob = (config.PARQUET_CRITICAL_DIR / "*" / "*.parquet").as_posix()
+    total, source = (
+        con.execute(f"SELECT COUNT(*) FROM read_parquet('{glob}')").fetchone()[0],
+        con.execute("SELECT COUNT(*) FROM trade_critical").fetchone()[0],
+    )
+    nb_min = con.execute(
+        f"SELECT COUNT(DISTINCT mineral) FROM read_parquet('{glob}')"
+    ).fetchone()[0]
+    nb_part = len(list(config.PARQUET_CRITICAL_DIR.glob("period=*")))
+    print("\n=== Résumé export critical (data/parquet/critical/) ===")
+    print(f"Partitions          : {nb_part} (une par année)")
+    print(f"Lignes              : {total:,}  (source trade_critical : {source:,})")
+    print(f"Cohérence           : {'OK' if total == source else 'ECART !'}")
+    print(f"Minéraux distincts  : {nb_min}")
+    print(f"Taille              : {taille_repertoire(config.PARQUET_CRITICAL_DIR) / 1024 / 1024:.1f} Mo")
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Export Parquet Comtrade")
+    parser.add_argument(
+        "--critical",
+        action="store_true",
+        help="Exporte le dataset HS6 minéraux critiques (table trade_critical)",
+    )
+    args = parser.parse_args()
+
     if not config.DB_PATH.exists():
         raise SystemExit(f"Base introuvable : {config.DB_PATH}. Lance d'abord la Phase 1.")
 
-    preparer_dossiers()
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
     try:
         codes_sans_continent = enregistrer_enrichissement(con)
-        exporter_detail(con)
-        exporter_aggregat(con)
-        exporter_references(con)
-        afficher_resume(con, codes_sans_continent)
+        if args.critical:
+            enregistrer_mineraux(con)
+            exporter_critical(con)
+            afficher_resume_critical(con)
+        else:
+            preparer_dossiers()
+            exporter_detail(con)
+            exporter_aggregat(con)
+            exporter_references(con)
+            afficher_resume(con, codes_sans_continent)
     finally:
         con.close()
 
