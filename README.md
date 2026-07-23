@@ -158,7 +158,50 @@ En développement, `webapp/data/parquet` est une **jonction** vers `data/parquet
 (voir ci-dessous). Le binaire `webapp/vendor/duckdb-wasm/duckdb-eh.wasm` (~35 Mo)
 n'est pas commité : voir `webapp/vendor/duckdb-wasm/README.md` pour le récupérer.
 
-### Déploiement (dossier statique hébergeable)
+### Déploiement sur Vercel
+
+Le dépôt est prêt à déployer tel quel : `vercel.json` sert `webapp/` à la racine
+du site. La seule étape manuelle est de publier les données une fois.
+
+**Le problème que ça résout.** Vercel plafonne l'upload de *sources* à 100 Mo
+sur le plan Hobby, or les Parquet et le moteur DuckDB-WASM pèsent ~290 Mo, et ils
+sont exclus de git. Ils sont donc publiés en **asset de release GitHub**, et
+`deploy/build.sh` les télécharge pendant le build : ils arrivent en *sortie* de
+build, où le plafond des 100 Mo ne s'applique pas.
+
+```bash
+# 1. Fabriquer l'archive (Parquet + .wasm + extension parquet) -> dist/
+python deploy/package_assets.py
+
+# 2. La publier en release GitHub (tag = ASSETS_TAG dans deploy/build.sh)
+gh release create donnees-v1 dist/webapp-assets.tar.gz --notes "Parquet Comtrade + DuckDB-WASM"
+
+# 3. Connecter le dépôt à Vercel : aucun réglage à saisir, vercel.json fait tout.
+```
+
+Après un ré-export des données, republier l'archive puis redéployer :
+
+```bash
+python deploy/package_assets.py
+gh release upload donnees-v1 dist/webapp-assets.tar.gz --clobber
+```
+
+Le build échoue explicitement (et non silencieusement) si l'archive est
+absente ou incomplète. Pour publier une nouvelle version des données sans écraser
+l'ancienne, créer un tag `donnees-v2` et définir la variable d'environnement
+`ASSETS_TAG` dans les réglages Vercel du projet.
+
+`vercel.json` met aussi les Parquet et le `.wasm` en cache immuable (un an) :
+seule la première visite paie le téléchargement du moteur.
+
+**Note sur les en-têtes.** Les en-têtes de sécurité usuels (`nosniff`,
+`X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) sont posés, mais pas
+de CSP : `index.html` contient une *import map* inline, qui imposerait soit
+`'unsafe-inline'` (CSP sans valeur réelle), soit un hash à resynchroniser à
+chaque modification. Le site étant statique, en lecture seule, sans
+authentification ni saisie utilisateur, le compromis ne le justifie pas.
+
+### Déploiement ailleurs (dossier statique)
 
 Copier dans un dossier autonome : tout `webapp/`, en remplaçant la jonction
 `webapp/data/parquet` par une **copie réelle** de `data/parquet/` (détail +
@@ -183,6 +226,9 @@ clean/                   # Phase 2/3, nettoyage + export Parquet + libellés FR
 ├── enrich.py           # Mapping code pays → ISO3 + continent
 ├── clean_export.py      # Export Parquet partitionné + enrichi (+ --critical)
 └── labels_fr.py          # Libellés FR (pays, chapitres HS, minéraux) → JSON
+deploy/                  # Déploiement Vercel
+├── build.sh            # Build Vercel : récupère les données depuis la release
+└── package_assets.py    # Fabrique dist/webapp-assets.tar.gz à publier
 webapp/                  # Phase 3, application d'analyse offline (DSFR)
 ├── index.html          # Coquille + onglets
 ├── css/, assets/         # Styles DSFR + police Marianne

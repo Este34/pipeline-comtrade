@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Les scripts shell sont exécutés par le conteneur de build Vercel (Linux) :
+# des fins de ligne CRLF les feraient échouer sur « \r: command not found ».
+*.sh text eol=lf

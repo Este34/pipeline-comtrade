@@ -13,3 +13,6 @@ webapp/data/parquet/
 # voir webapp/vendor/duckdb-wasm/README.md
 webapp/vendor/duckdb-wasm/*.wasm
 webapp/vendor/duckdb-wasm/extensions/
+
+# Archive de déploiement produite par deploy/package_assets.py
+dist/
