@@ -111,6 +111,27 @@ interroge les Parquet directement dans le navigateur via **DuckDB-WASM**
 (vendorisé, 100 % hors-ligne). Cinq vues : Profil pays, Analyse bilatérale,
 Analyse par produit, Cartes & séries, Minéraux critiques. Libellés en français.
 
+Fonctionnalités clés :
+- **Bascule Valeur (US$) / Poids (t)** dans chaque vue. Le poids (`netWgt`) est
+  fiable au niveau HS6 (minéraux) ; au niveau HS2 agrégé, Comtrade ne le rapporte
+  généralement pas → affichage « poids non déclaré ».
+- **Carte interactive** (Leaflet) dans « Cartes & séries » et « Minéraux
+  critiques » : curseur d'années + bouton **Play** (animation 2000→2025), survol,
+  clic pays. Le **fond de carte tuilé est chargé en ligne** (habillage
+  uniquement) ; **les données restent 100 % offline** (DuckDB-WASM). Sans réseau,
+  les pays colorés s'affichent quand même, sans le fond.
+- **Minéraux critiques** : ~149 codes HS6 couvrant la chaîne matière première →
+  alliage/demi-produit → produit fini (batteries, aimants, catalyseurs…), avec
+  **filtre par catégorie** et **recherche par code HS6**. *Rappel : un produit
+  fini contient le minéral sans en indiquer la teneur.*
+
+### Développement : cache navigateur
+
+Le rechargement des modules ES peut être masqué par le cache du navigateur.
+Pour fiabiliser l'itération, servir avec un en-tête `Cache-Control: no-store`
+(sans réponses 304) ou changer de port entre deux essais. En production (site
+statique), le cache est au contraire souhaitable.
+
 ### Générer les libellés FR puis lancer en local
 
 ```bash
