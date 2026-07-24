@@ -6,7 +6,7 @@ import { fmtMetric, axisFmt, pct, downloadCsv } from "../format.js";
 import { pays } from "../labels.js";
 import {
   selectHTML, anneeOptions, fluxOptions, metricOptions, ctrl, kpisHTML, renderTable, card,
-  renderChips, skeletonKpis, mineralOptions, ANNEES,
+  renderChips, skeletonKpis, mineralOptions, champCodeHTML, normaliserCode, ANNEES,
 } from "../ui.js";
 import { barChart, lineChart } from "../charts.js";
 import { interactiveMap } from "../map.js";
@@ -27,7 +27,7 @@ export async function mount(container, { labels }) {
         <select id="mc-cat" multiple size="3">
           ${CATEGORIES.map((c) => `<option value="${c}" selected>${c}</option>`).join("")}
         </select></div>
-      ${ctrl("Recherche code HS6 (optionnel)", '<input id="mc-code" type="text" placeholder="ex: 850760" />')}
+      ${ctrl("Code NC8 / HS6 (optionnel)", champCodeHTML("mc-code", "ex : 85076000 ou 850760"))}
       ${ctrl("Année", selectHTML("mc-annee", anneeOptions(), 2023))}
       ${ctrl("Flux", selectHTML("mc-flux", fluxOptions(), "X"))}
       ${ctrl("Mesure", selectHTML("mc-metric", metricOptions(), "valeur"))}
@@ -56,15 +56,21 @@ export async function mount(container, { labels }) {
       { label: "Flux", value: flux.options[flux.selectedIndex].text, onReset: () => { flux.value = "X"; analyser(); } },
       { label: "Mesure", value: metric.options[metric.selectedIndex].text, onReset: () => { metric.value = "valeur"; analyser(); } },
     ];
-    if (code.value.trim()) items.splice(1, 0, { label: "Code HS6", value: code.value.trim(), onReset: () => { code.value = ""; analyser(); } });
+    // La puce montre le code réellement appliqué, pas la saisie : afficher un
+    // NC8 à 8 chiffres alors que le filtre porte sur 6 induirait en erreur.
+    const cn = normaliserCode(code.value);
+    if (cn) items.splice(1, 0, { label: "Code HS6", value: cn.hs6, onReset: () => { code.value = ""; analyser(); } });
     renderChips(chipsEl, items);
   }
 
   function clauseFiltre() {
-    const code = container.querySelector("#mc-code").value.trim();
+    // Recherche par préfixe : un NC8 est tronqué à ses 6 premiers chiffres (qui
+    // sont son code HS6), et un code partiel reste utile (« 8507 » couvre tous
+    // les accumulateurs électriques).
+    const code = normaliserCode(container.querySelector("#mc-code").value);
     const cats = [...container.querySelector("#mc-cat").selectedOptions].map((o) => o.value);
     const parts = [];
-    if (code) parts.push(`cmdCode LIKE ${sqlStr("%" + code + "%")}`);
+    if (code) parts.push(`cmdCode LIKE ${sqlStr(code.hs6 + "%")}`);
     else parts.push(`mineral = ${sqlStr(container.querySelector("#mc-min").value)}`);
     if (cats.length && cats.length < CATEGORIES.length)
       parts.push(`categorie IN (${cats.map(sqlStr).join(",")})`);

@@ -132,12 +132,34 @@ Fonctionnalités clés :
   choisi → clients, pour lire une dépendance nationale. La bascule poids/valeur
   y est particulièrement parlante : le nickel 2023 pèse 93 % de matière première
   en tonnage contre une part bien moindre en valeur.
+- **Recherche par code produit** (Minéraux critiques, Flux, Analyse par produit).
+  La saisie accepte un **NC8** (nomenclature combinée européenne, 8 chiffres),
+  un HS6 ou un HS2. Comtrade publie en HS, pas en NC : un NC8 n'existe donc pas
+  tel quel dans les données, mais ses six premiers chiffres *sont* le code HS6.
+  La précision atteinte suit celle de l'extraction : **HS6 exact** sur les
+  minéraux critiques et les flux, **chapitre à 2 chiffres** sur le jeu principal,
+  où `85076000` sélectionne le chapitre `85`.
 - **Navigation** : barre de contrôle sticky en verre (logo Isec, onglets en
   pilules), **palette de commandes** (`Ctrl`/`Cmd` + `K`) pour sauter à une vue
   ou ouvrir directement le profil d'un pays, **combobox avec recherche**
   remplaçant les `<select>` à liste longue (pays, chapitres HS), **puces de
   filtres actifs** retirables, **squelettes de chargement** pendant les
   requêtes DuckDB-WASM, bouton de retour en haut de page.
+
+### Piège Leaflet : vider le conteneur ne détruit pas la carte
+
+`host.innerHTML = ""` détache le DOM mais laisse vivre l'instance Leaflet, ses
+écouteurs sur `window`, ses polygones, et surtout le minuteur de l'animation
+« Play », qui continue de redessiner une couche détachée indéfiniment. Chaque
+relance d'analyse abandonnait ainsi une carte complète : au bout de quelques
+analyses le navigateur se figeait, symptôme d'autant plus trompeur qu'une
+fenêtre de navigation privée, repartant d'une session vierge, paraissait saine.
+
+`webapp/js/map.js` tient un registre des cartes vivantes et expose
+`purgerCartes()`, appelée avant chaque nouvel affichage et à chaque changement
+d'onglet ; le minuteur s'arrête aussi de lui-même si son conteneur a été
+détaché. Vérifié en instrumentant `setInterval` : le compte reste à 1 carte et
+1 minuteur après trois relances consécutives avec animation active.
 
 ### Piège hors-ligne : l'extension parquet de DuckDB
 

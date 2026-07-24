@@ -12,10 +12,27 @@ function isoOf(feature) {
   return feature.id || feature.properties?.ISO_A3 || feature.properties?.iso_a3;
 }
 
+// Registre des cartes vivantes.
+//
+// Vider le conteneur (`host.innerHTML = ""`, ce que fait chaque relance
+// d'analyse) détache le DOM mais ne détruit PAS l'instance Leaflet : ses
+// écouteurs sur window survivent, ses 180 polygones aussi, et surtout le
+// minuteur de l'animation « Play » continue de redessiner une couche détachée
+// pour toujours. Quelques analyses suffisaient alors à saturer le navigateur.
+const cartesVivantes = new Set();
+
+// Détruit les cartes dont le conteneur n'est plus dans le document (ou toutes).
+export function purgerCartes({ toutes = false } = {}) {
+  for (const carte of [...cartesVivantes]) {
+    if (toutes || !carte.hote.isConnected) carte.detruire();
+  }
+}
+
 // dataParAnnee : Map<année, Map<iso3, valeur>>.
 // opts : { annees:[...], metric, labelFn(iso3), fmt(v), onClick(iso3) }.
 export function interactiveMap(host, geojson, dataParAnnee, opts) {
   const { annees, labelFn, fmt, onClick } = opts;
+  purgerCartes(); // récupère l'instance abandonnée par un précédent affichage
   host.innerHTML = "";
 
   // Échelle de couleur log globale (comparable d'une année à l'autre).
@@ -67,12 +84,17 @@ export function interactiveMap(host, geojson, dataParAnnee, opts) {
     },
   }).addTo(map);
 
+  // L'infobulle est liée une seule fois par pays ; les rafraîchissements ne font
+  // qu'en remplacer le contenu, au lieu de recréer 180 objets Leaflet à chaque
+  // pas d'animation.
   function majTooltips() {
     layer.eachLayer((lyr) => {
       const iso3 = isoOf(lyr.feature);
       const v = valeursDe(annee).get(iso3) || 0;
       const nom = labelFn ? labelFn(iso3) : iso3;
-      lyr.bindTooltip(`<b>${esc(nom)}</b><br>${v > 0 ? fmt(v) : "n.d."}`, { sticky: true });
+      const html = `<b>${esc(nom)}</b><br>${v > 0 ? fmt(v) : "n.d."}`;
+      if (lyr.getTooltip()) lyr.setTooltipContent(html);
+      else lyr.bindTooltip(html, { sticky: true });
     });
   }
 
@@ -95,6 +117,9 @@ export function interactiveMap(host, geojson, dataParAnnee, opts) {
     playBtn.textContent = "⏸ Pause";
     if (annee >= anneeMax) annee = annees[0];
     timer = setInterval(() => {
+      // Filet de sécurité : si le conteneur a été détaché entre-temps, le
+      // minuteur s'arrête de lui-même plutôt que d'animer dans le vide.
+      if (!mapDiv.isConnected) { clearInterval(timer); timer = null; return; }
       annee = annee >= anneeMax ? annees[0] : annee + 1;
       rafraichir();
       if (annee >= anneeMax) { clearInterval(timer); timer = null; playBtn.textContent = "▶ Play"; }
@@ -103,5 +128,16 @@ export function interactiveMap(host, geojson, dataParAnnee, opts) {
 
   // Corrige la taille une fois le conteneur visible.
   setTimeout(() => map.invalidateSize(), 60);
-  return { setYear: (y) => { annee = y; rafraichir(); } };
+
+  const instance = {
+    hote: host,
+    detruire() {
+      if (timer) { clearInterval(timer); timer = null; }
+      map.remove();
+      cartesVivantes.delete(instance);
+    },
+  };
+  cartesVivantes.add(instance);
+
+  return { setYear: (y) => { annee = y; rafraichir(); }, detruire: instance.detruire };
 }

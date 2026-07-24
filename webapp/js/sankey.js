@@ -49,9 +49,10 @@ function chemin(x0, y0, x1, y1, ep) {
  * @param {{nodes: Array, links: Array}} graphe
  *   nodes : [{ id, label, col, couleur }]
  *   links : [{ source, target, value, couleur }]
- * @param {{fmt: (v:number)=>string, hauteur?: number}} opts
+ * @param {{fmt: (v:number)=>string, hauteur?: number,
+ *          entetes?: {gauche: string, centre: string, droite: string}}} opts
  */
-export function sankey(host, { nodes, links }, { fmt, hauteur } = {}) {
+export function sankey(host, { nodes, links }, { fmt, hauteur, entetes } = {}) {
   host.innerHTML = "";
   const utiles = links.filter((k) => k.value > 0);
   if (!utiles.length) {
@@ -93,17 +94,45 @@ export function sankey(host, { nodes, links }, { fmt, hauteur } = {}) {
     }
   });
 
+  // Bandeau d'en-têtes : nomme explicitement ce que porte chaque colonne, et
+  // matérialise le sens de lecture par des chevrons entre les colonnes.
+  const HAUT = entetes ? 52 : 0;
+
   const svg = el("svg", {
-    viewBox: `0 0 ${L} ${H}`,
+    viewBox: `0 0 ${L} ${H + HAUT}`,
     width: "100%",
     role: "img",
     class: "sankey",
     preserveAspectRatio: "xMidYMid meet",
   });
+
+  if (entetes) {
+    const gEntetes = el("g", { class: "sankey-entetes" });
+    const cols = [
+      { texte: entetes.gauche, x: X[0].x + X[0].w, ancre: "end" },
+      { texte: entetes.centre, x: X[1].x + X[1].w / 2, ancre: "middle" },
+      { texte: entetes.droite, x: X[2].x, ancre: "start" },
+    ];
+    for (const c of cols) {
+      const t = el("text", { x: c.x, y: 20, "text-anchor": c.ancre, class: "sankey-entete" });
+      t.textContent = c.texte;
+      gEntetes.appendChild(t);
+    }
+    for (const x of [(X[0].x + X[0].w + X[1].x) / 2, (X[1].x + X[1].w + X[2].x) / 2]) {
+      const fleche = el("text", { x, y: 21, "text-anchor": "middle", class: "sankey-fleche" });
+      fleche.textContent = "❯";
+      gEntetes.appendChild(fleche);
+    }
+    gEntetes.appendChild(el("line", { x1: 0, y1: 36, x2: L, y2: 36, class: "sankey-regle" }));
+    svg.appendChild(gEntetes);
+  }
+
+  const gCorps = el("g", { transform: `translate(0,${HAUT})` });
   const gLiens = el("g", { class: "sankey-liens" });
   const gNoeuds = el("g", { class: "sankey-noeuds" });
-  svg.appendChild(gLiens);
-  svg.appendChild(gNoeuds);
+  gCorps.appendChild(gLiens);
+  gCorps.appendChild(gNoeuds);
+  svg.appendChild(gCorps);
 
   // Empiler les rubans en suivant la position verticale de l'autre extrémité
   // limite fortement les croisements, sans algorithme d'optimisation.

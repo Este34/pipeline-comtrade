@@ -385,6 +385,9 @@ td[data-sume]::after{content:' %'}
 .sankey-noeud:hover{filter:brightness(1.15)}
 .sankey-txt{font-size:13px;fill:var(--txt)}
 .sankey-txt-bande{font-size:12px;font-weight:700;fill:#fff}
+.sankey-entete{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;fill:var(--dark)}
+.sankey-fleche{font-size:13px;fill:var(--border)}
+.sankey-regle{stroke:var(--border);stroke-width:1}
 .legende{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:10px;font-size:12.5px;color:var(--muted)}
 .legende-item{display:inline-flex;align-items:center;gap:6px}
 .legende-item i{width:12px;height:12px;border-radius:3px;display:inline-block}

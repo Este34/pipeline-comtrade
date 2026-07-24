@@ -5,7 +5,7 @@ import { fmtMetric, axisFmt, pct, downloadCsv } from "../format.js";
 import { chapitre, pays } from "../labels.js";
 import {
   comboHTML, wireCombo, selectHTML, anneeOptions, fluxOptions, metricOptions, ctrl,
-  renderTable, card, renderChips, skeletonKpis, ANNEES,
+  renderTable, card, renderChips, skeletonKpis, champCodeHTML, normaliserCode, ANNEES,
 } from "../ui.js";
 import { barChart, lineChart } from "../charts.js";
 
@@ -21,17 +21,36 @@ export async function mount(container, { labels }) {
   container.innerHTML = `
     <div class="filterbar">
       ${ctrl("Produit (chapitre HS)", comboHTML("pr-cmd", "Rechercher un produit..."), true)}
+      ${ctrl("Code NC8 / HS", champCodeHTML("pr-code"))}
       ${ctrl("Année", selectHTML("pr-annee", anneeOptions(), 2023))}
       ${ctrl("Flux", selectHTML("pr-flux", fluxOptions(), "X"))}
       ${ctrl("Mesure", selectHTML("pr-metric", metricOptions(), "valeur"))}
       <button class="btn" id="pr-go">Analyser</button>
     </div>
     <div class="chips" id="pr-chips" aria-label="Filtres actifs"></div>
+    <div class="note" id="pr-code-aide">Ce jeu de données est extrait au niveau <b>chapitre HS (2 chiffres)</b>.
+      Un code NC8 ou HS6 saisi ici sélectionne donc son chapitre : <code>85076000</code> et <code>850760</code>
+      mènent tous deux au chapitre <code>85</code>. Pour une analyse au code exact, utilisez l'onglet
+      <b>Minéraux critiques</b> ou <b>Flux</b>, extraits en HS6.</div>
     <div id="pr-res"></div>`;
 
   const res = container.querySelector("#pr-res");
   const chipsEl = container.querySelector("#pr-chips");
   const combo = wireCombo("pr-cmd", chapitres, { value: "27" });
+  const champCode = container.querySelector("#pr-code");
+
+  // Une saisie de code positionne le combobox sur le chapitre correspondant :
+  // le code reste un raccourci de sélection, jamais un filtre concurrent.
+  function appliquerCode() {
+    const c = normaliserCode(champCode.value);
+    if (!c) return true;
+    if (!chapitres.some((o) => o.value === c.hs2)) {
+      res.innerHTML = `<div class="empty">Aucun chapitre HS ne correspond au code « ${champCode.value} ».</div>`;
+      return false;
+    }
+    combo.set(c.hs2);
+    return true;
+  }
 
   function annee() { return document.getElementById("pr-annee"); }
   function flux() { return document.getElementById("pr-flux"); }
@@ -47,6 +66,7 @@ export async function mount(container, { labels }) {
   }
 
   async function analyser() {
+    if (!appliquerCode()) return;
     const cmd = combo.value;
     const an = Number(annee().value);
     const fx = flux().value;
@@ -115,7 +135,10 @@ export async function mount(container, { labels }) {
   }
 
   container.querySelector("#pr-go").addEventListener("click", analyser);
-  combo.onChange(analyser);
+  // Choisir un chapitre au combobox vide le code : les deux champs désignent la
+  // même chose, garder l'ancienne saisie afficherait un filtre trompeur.
+  combo.onChange(() => { champCode.value = ""; analyser(); });
+  champCode.addEventListener("keydown", (e) => { if (e.key === "Enter") analyser(); });
   ["pr-annee", "pr-flux", "pr-metric"].forEach((id) => document.getElementById(id).addEventListener("change", majChips));
 
   await analyser();

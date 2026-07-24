@@ -20,6 +20,26 @@ export function paysOptions(labels) {
     .sort((a, b) => a.label.localeCompare(b.label, "fr"));
 }
 
+// Champ de recherche par code produit.
+//
+// La saisie accepte un code NC8 (nomenclature combinée européenne, 8 chiffres),
+// HS6 ou HS2. Comtrade publie en HS, pas en NC : un NC8 n'existe donc pas tel
+// quel dans les données, mais ses six premiers chiffres SONT le code HS6, ce qui
+// rend la saisie exploitable. La précision atteinte dépend du jeu de données
+// interrogé : HS6 exact sur les minéraux critiques, chapitre à 2 chiffres sur le
+// jeu principal, qui n'a pas été extrait plus finement.
+export function champCodeHTML(id, placeholder = "ex : 85076000, 850760 ou 85") {
+  return `<input id="${id}" type="text" inputmode="numeric" autocomplete="off"
+    placeholder="${esc(placeholder)}" aria-describedby="${id}-aide">`;
+}
+
+// Normalise une saisie de code produit ; renvoie null si rien d'exploitable.
+export function normaliserCode(saisie) {
+  const chiffres = String(saisie || "").replace(/\D/g, "");
+  if (!chiffres) return null;
+  return { chiffres, hs2: chiffres.slice(0, 2), hs6: chiffres.slice(0, 6) };
+}
+
 // Options minéraux, dédoublonnées depuis la table des codes HS6 et triées FR.
 export function mineralOptions(labels) {
   return [...new Set(Object.values(labels.minerals).map((v) => v.mineral))]

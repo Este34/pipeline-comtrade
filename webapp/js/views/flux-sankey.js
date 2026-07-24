@@ -16,6 +16,7 @@ import { pays } from "../labels.js";
 import {
   selectHTML, anneeOptions, metricOptions, ctrl, comboHTML, wireCombo, paysOptions,
   mineralOptions, kpisHTML, renderTable, card, renderChips, skeletonKpis,
+  champCodeHTML, normaliserCode,
 } from "../ui.js";
 import { sankey } from "../sankey.js";
 
@@ -45,6 +46,7 @@ export async function mount(container, { labels }) {
         { value: "pays", label: "Pays au centre" },
       ], "chaine"), true)}
       ${ctrl("Minéral critique", selectHTML("fx-min", mineralOptions(labels), "Lithium"))}
+      ${ctrl("Code NC8 / HS6 (optionnel)", champCodeHTML("fx-code", "ex : 85076000 ou 850760"))}
       <div class="ctrl" id="fx-pays-ctrl" hidden><label for="fx-pays">Pays au centre</label>
         ${comboHTML("fx-pays", "Rechercher un pays...")}</div>
       ${ctrl("Année", selectHTML("fx-annee", anneeOptions(), 2023))}
@@ -85,6 +87,8 @@ export async function mount(container, { labels }) {
       { label: "Mesure", value: lire("metric").selectedOptions[0].text, onReset: () => { lire("metric").value = "valeur"; analyser(); } },
       { label: "Partenaires", value: lire("top").value, onReset: () => { lire("top").value = "12"; analyser(); } },
     ];
+    const c = normaliserCode(lire("code").value);
+    if (c) items.splice(1, 1, { label: "Code", value: c.hs6, onReset: () => { lire("code").value = ""; analyser(); } });
     if (modeCourant() === "pays") {
       items.splice(2, 0, { label: "Pays", value: pays(labels, combo.value), onReset: () => { combo.set("FRA"); analyser(); } });
     }
@@ -184,9 +188,14 @@ export async function mount(container, { labels }) {
     const disp = (v) => fmtMetric(v, metric);
     const fmt = axisFmt(metric);
     const nomPays = (i) => pays(labels, i);
+    // Un code saisi prime sur le minéral : les deux désignent un périmètre de
+    // produits, les cumuler n'aurait pas de sens. Le préfixe permet d'entrer un
+    // code partiel (« 8507 » couvre tous les accumulateurs).
+    const code = normaliserCode(lire("code").value);
+    const cible = code ? `code ${code.hs6}` : mineral;
+    const filtreCommun = `${code ? `cmdCode LIKE ${sqlStr(code.hs6 + "%")}` : `mineral = ${sqlStr(mineral)}`}
+      AND partnerCode <> '0' AND reporterISO3 IS NOT NULL AND partnerISO3 IS NOT NULL`;
     const SRC = srcCritical([annee]);
-    const filtreCommun = `mineral = ${sqlStr(mineral)} AND partnerCode <> '0'
-      AND reporterISO3 IS NOT NULL AND partnerISO3 IS NOT NULL`;
 
     let graphe, kpis, lignesTable, colonnes, nomFichier, titreGraphe;
 
@@ -208,7 +217,7 @@ export async function mount(container, { labels }) {
         { label: "Part en matière première", value: pct(brut, total) },
         { label: "Concentration (top 5 exportateurs)", value: pct(top5, total), cls: total && top5 / total > 0.7 ? "neg" : "" },
       ];
-      titreGraphe = `Chaîne de valeur : ${mineral} (${annee})`;
+      titreGraphe = `Chaîne de valeur : ${cible} (${annee})`;
       lignesTable = lignes
         .map((r) => ({ exportateur: nomPays(r.exp), importateur: nomPays(r.imp), categorie: r.categorie, mesure: r[metric] || 0 }))
         .filter((r) => r.mesure > 0).sort((a, b) => b.mesure - a.mesure).slice(0, 50);
@@ -218,7 +227,7 @@ export async function mount(container, { labels }) {
         { key: "categorie", label: "Maillon" },
         { key: "mesure", label: metric === "poids" ? "Poids" : "Valeur", render: (r) => `<span>${disp(r.mesure)}</span>` },
       ];
-      nomFichier = `flux_chaine_${mineral}_${annee}`;
+      nomFichier = `flux_chaine_${cible.replace(/\W+/g, "_")}_${annee}`;
     } else {
       const lignes = await query(`
         SELECT partnerISO3 AS autre, categorie, flowCode,
@@ -235,7 +244,7 @@ export async function mount(container, { labels }) {
         { label: `Exportations ${annee}`, value: disp(totalExp) },
         { label: "Dépendance (top 3 fournisseurs)", value: pct(top3Imp, totalImp), cls: totalImp && top3Imp / totalImp > 0.7 ? "neg" : "" },
       ];
-      titreGraphe = `${nomPays(iso3)} : fournisseurs et clients, ${mineral} (${annee})`;
+      titreGraphe = `${nomPays(iso3)} : fournisseurs et clients, ${cible} (${annee})`;
       lignesTable = lignes
         .map((r) => ({ sens: r.flowCode === "M" ? "Import" : "Export", partenaire: nomPays(r.autre), categorie: r.categorie, mesure: r[metric] || 0 }))
         .filter((r) => r.mesure > 0).sort((a, b) => b.mesure - a.mesure).slice(0, 50);
@@ -245,7 +254,7 @@ export async function mount(container, { labels }) {
         { key: "categorie", label: "Maillon" },
         { key: "mesure", label: metric === "poids" ? "Poids" : "Valeur", render: (r) => `<span>${disp(r.mesure)}</span>` },
       ];
-      nomFichier = `flux_pays_${iso3}_${mineral}_${annee}`;
+      nomFichier = `flux_pays_${iso3}_${cible.replace(/\W+/g, "_")}_${annee}`;
     }
 
     res.innerHTML = "";
@@ -260,7 +269,12 @@ export async function mount(container, { labels }) {
       .map((c) => `<span class="legende-item"><i style="background:${COULEUR_CAT[c]}"></i>${c}</span>`).join("")}</div>`);
     const hote = document.createElement("div");
     corps.appendChild(hote);
-    sankey(hote, graphe, { fmt: disp });
+    sankey(hote, graphe, {
+      fmt: disp,
+      entetes: mode === "chaine"
+        ? { gauche: "Exportateurs", centre: "Degré de transformation", droite: "Importateurs" }
+        : { gauche: "Fournisseurs", centre: nomPays(iso3), droite: "Clients" },
+    });
 
     const cTable = card("Principaux flux détaillés (50 premiers)", "fx-table");
     res.appendChild(cTable);
@@ -273,7 +287,11 @@ export async function mount(container, { labels }) {
 
   container.querySelector("#fx-go").addEventListener("click", analyser);
   lire("mode").addEventListener("change", () => { majAffichage(); majChips(); });
-  ["min", "annee", "metric", "top"].forEach((id) => lire(id).addEventListener("change", majChips));
+  // Choisir un minéral vide le code : il prime sur le minéral, garder les deux
+  // afficherait un filtre qui n'est pas celui appliqué.
+  lire("min").addEventListener("change", () => { lire("code").value = ""; majChips(); });
+  lire("code").addEventListener("keydown", (e) => { if (e.key === "Enter") analyser(); });
+  ["annee", "metric", "top"].forEach((id) => lire(id).addEventListener("change", majChips));
   combo.onChange(majChips);
   await analyser();
 }

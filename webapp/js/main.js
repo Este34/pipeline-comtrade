@@ -4,6 +4,7 @@ import { initDB } from "./db.js";
 import { loadLabels } from "./labels.js";
 import { setStatus, wireBackToTop } from "./ui.js";
 import { mountPalette } from "./palette.js";
+import { purgerCartes } from "./map.js";
 
 import * as profil from "./views/profil-pays.js";
 import * as bilateral from "./views/bilateral.js";
@@ -18,6 +19,10 @@ const monte = {}; // vues déjà montées (montage unique)
 let ctx = null;
 
 async function activer(nom) {
+  // Une carte dont le conteneur a été remplacé par une nouvelle analyse reste
+  // sinon vivante, avec son animation, jusqu'à saturation du navigateur.
+  purgerCartes();
+
   document.querySelectorAll(".tab").forEach((t) => {
     const actif = t.dataset.view === nom;
     t.classList.toggle("active", actif);
