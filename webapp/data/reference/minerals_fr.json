@@ -19,6 +19,10 @@
     "categorie": "Matière première",
     "mineral": "Manganèse"
   },
+  "260300": {
+    "categorie": "Matière première",
+    "mineral": "Cuivre"
+  },
   "260400": {
     "categorie": "Matière première",
     "mineral": "Nickel"
@@ -26,6 +30,14 @@
   "260500": {
     "categorie": "Matière première",
     "mineral": "Cobalt"
+  },
+  "260600": {
+    "categorie": "Matière première",
+    "mineral": "Aluminium"
+  },
+  "260800": {
+    "categorie": "Matière première",
+    "mineral": "Zinc"
   },
   "261000": {
     "categorie": "Matière première",
@@ -79,6 +91,18 @@
     "categorie": "Matière première",
     "mineral": "Magnésium"
   },
+  "281700": {
+    "categorie": "Matière première",
+    "mineral": "Zinc"
+  },
+  "281820": {
+    "categorie": "Matière première",
+    "mineral": "Aluminium"
+  },
+  "281830": {
+    "categorie": "Matière première",
+    "mineral": "Aluminium"
+  },
   "281910": {
     "categorie": "Matière première",
     "mineral": "Chrome"
@@ -115,6 +139,10 @@
     "categorie": "Matière première",
     "mineral": "Nickel"
   },
+  "282550": {
+    "categorie": "Matière première",
+    "mineral": "Cuivre"
+  },
   "282560": {
     "categorie": "Matière première",
     "mineral": "Gallium, germanium, indium"
@@ -146,6 +174,10 @@
   "283324": {
     "categorie": "Matière première",
     "mineral": "Nickel"
+  },
+  "283325": {
+    "categorie": "Matière première",
+    "mineral": "Cuivre"
   },
   "283422": {
     "categorie": "Matière première",
@@ -307,6 +339,82 @@
     "categorie": "Alliage / demi-produit",
     "mineral": "Niobium"
   },
+  "740100": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740200": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740311": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740312": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740313": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740319": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740321": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740322": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740329": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740400": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740500": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740710": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740721": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740729": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740811": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740819": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740821": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "740829": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Cuivre"
+  },
+  "741300": {
+    "categorie": "Produit fini",
+    "mineral": "Cuivre"
+  },
   "750110": {
     "categorie": "Alliage / demi-produit",
     "mineral": "Nickel"
@@ -338,6 +446,114 @@
   "750512": {
     "categorie": "Alliage / demi-produit",
     "mineral": "Nickel"
+  },
+  "760110": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760120": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760200": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760310": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760320": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760410": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760421": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760429": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760511": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760519": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760521": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760529": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760611": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760612": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760691": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "760692": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Aluminium"
+  },
+  "761090": {
+    "categorie": "Produit fini",
+    "mineral": "Aluminium"
+  },
+  "761100": {
+    "categorie": "Produit fini",
+    "mineral": "Aluminium"
+  },
+  "761510": {
+    "categorie": "Produit fini",
+    "mineral": "Aluminium"
+  },
+  "790111": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Zinc"
+  },
+  "790112": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Zinc"
+  },
+  "790120": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Zinc"
+  },
+  "790200": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Zinc"
+  },
+  "790310": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Zinc"
+  },
+  "790400": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Zinc"
+  },
+  "790500": {
+    "categorie": "Alliage / demi-produit",
+    "mineral": "Zinc"
+  },
+  "790700": {
+    "categorie": "Produit fini",
+    "mineral": "Zinc"
   },
   "810110": {
     "categorie": "Alliage / demi-produit",
@@ -594,5 +810,21 @@
   "854143": {
     "categorie": "Produit fini",
     "mineral": "Silicium"
+  },
+  "854411": {
+    "categorie": "Produit fini",
+    "mineral": "Cuivre"
+  },
+  "854442": {
+    "categorie": "Produit fini",
+    "mineral": "Cuivre"
+  },
+  "854449": {
+    "categorie": "Produit fini",
+    "mineral": "Cuivre"
+  },
+  "854460": {
+    "categorie": "Produit fini",
+    "mineral": "Cuivre"
   }
 }

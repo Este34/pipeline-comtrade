@@ -94,8 +94,9 @@ un continent nul, ce qui est attendu).
 
 ## Minéraux critiques (dataset HS6 dédié)
 
-En complément des chapitres HS2, un dataset **HS6** cible ~40 codes de minéraux
-critiques (lithium, cobalt, terres rares, graphite, tungstène…), défini dans
+En complément des chapitres HS2, un dataset **HS6** cible 207 codes de minéraux
+critiques et métaux de base (lithium, cobalt, terres rares, cuivre, aluminium,
+zinc, graphite, tungstène…), défini dans
 `scraper/config.py → CRITICAL_MINERALS_HS6`.
 
 ```bash
@@ -103,6 +104,48 @@ python scraper/fetch_all.py --critical     # extraction (tous pays, 2000-2025)
 python scraper/load_to_db.py --critical     # -> table trade_critical
 python clean/clean_export.py --critical      # -> data/parquet/critical/
 ```
+
+### Compléter le dataset sans tout re-télécharger
+
+`fetch_all.py --critical` boucle sur (déclarant, année) et saute tout couple
+déjà traité : ajouter des codes HS6 à la config l'obligerait à effacer les
+checkpoints et à relancer les ~4300 appels. Or l'API accepte d'omettre le
+déclarant et renvoie alors tous les pays d'un coup.
+
+```bash
+python scraper/fetch_complement.py --dry-run   # liste ce qui manque, sans appeler
+python scraper/fetch_complement.py             # extraction (confirmation demandée)
+```
+
+Le script compare la config à la table déjà chargée et n'extrait que la
+différence, en un appel par (année, flux), soit **52 appels au lieu de ~4300**.
+Mesuré : 165 déclarants et 244 partenaires en une réponse.
+
+Le découpage par flux n'est pas cosmétique. Un appel de contrôle tous flux
+confondus atteignait **84 % du plafond de 250 000 lignes** ; séparer imports et
+exports ramène la plus grosse réponse à 44 %. Le script échoue bruyamment si une
+réponse frôle malgré tout le plafond, plutôt que de laisser passer des données
+tronquées sans le signaler. Il filtre aussi sur la même liste de déclarants que
+l'extraction principale, sinon les groupes agrégés (UE, ASEAN) entreraient dans
+le complément et fausseraient les totaux par rapport aux minéraux déjà extraits.
+
+### Fiabilité du poids déclaré (`netWgt`)
+
+Le tonnage vient des déclarations douanières et n'est pas toujours cohérent avec
+la valeur. Contrôle fait sur le dataset critique, en comparant chaque
+(déclarant, code, année) au **prix implicite médian du même code la même année**,
+seule référence valable : un seuil absolu classerait comme aberrante la bauxite
+australienne à 30 USD/t ou le minerai de nickel philippin à 27 USD/t, qui sont
+leurs vrais prix.
+
+Résultat : **49 cas sur 8224 (0,6 %)**. Le principal est la Papouasie-Nouvelle-Guinée
+sur le minerai de cuivre (`260300`), qui déclare 41,6 Mt pour 0,5 Md USD en 2023,
+soit 11 USD/t contre une médiane de 2006 chez ses pairs, et récidive de 2004 à
+2022. Isolé, ce seul cas pèse 10 % du tonnage mondial 2023 et place la PNG en tête
+des exportateurs, à tort : hors PNG le classement est Pérou 10,0 Mt, Indonésie
+3,0, Chili 3,0. Les données sont laissées **telles quelles**, sans correction
+silencieuse ; la bascule valeur/poids permet de recouper, la valeur étant ici
+cohérente.
 
 ## Phase 3, webapp d'analyse offline (`webapp/`)
 
@@ -120,7 +163,7 @@ Fonctionnalités clés :
   clic pays. Le **fond de carte tuilé est chargé en ligne** (habillage
   uniquement) ; **les données restent 100 % offline** (DuckDB-WASM). Sans réseau,
   les pays colorés s'affichent quand même, sans le fond.
-- **Minéraux critiques** : ~149 codes HS6 couvrant la chaîne matière première →
+- **Minéraux critiques** : 207 codes HS6 sur 27 minéraux, couvrant la chaîne matière première →
   alliage/demi-produit → produit fini (batteries, aimants, catalyseurs…), avec
   **filtre par catégorie** et **recherche par code HS6**. *Rappel : un produit
   fini contient le minéral sans en indiquer la teneur.*

@@ -124,6 +124,23 @@ _CRITICAL_GROUPS = [
     ("Molybdène", CAT_ALLIAGE, ["720270", "810210", "810291", "810294", "810295", "810296", "810297", "810299"]),
     ("Bismuth", CAT_MP, ["283422", "283693"]),
     ("Bismuth", CAT_ALLIAGE, ["810600", "810610", "810690"]),
+    # Métaux de base à fort enjeu d'approvisionnement. Ils ne figurent pas sur la
+    # liste UE des matières premières « critiques » (le cuivre y est « stratégique »
+    # depuis le CRMA 2023, le zinc n'y est pas), mais ils structurent l'électrification
+    # et la construction, ce qui les rend indispensables à une lecture des ressources.
+    ("Cuivre", CAT_MP, ["260300", "282550", "283325"]),
+    ("Cuivre", CAT_ALLIAGE, ["740100", "740200", "740311", "740312", "740313", "740319",
+                             "740321", "740322", "740329", "740400", "740500", "740710",
+                             "740721", "740729", "740811", "740819", "740821", "740829"]),
+    ("Cuivre", CAT_FINI, ["741300", "854411", "854442", "854449", "854460"]),  # câbles et fils isolés
+    ("Aluminium", CAT_MP, ["260600", "281820", "281830"]),  # bauxite, alumine, hydroxyde
+    ("Aluminium", CAT_ALLIAGE, ["760110", "760120", "760200", "760310", "760320", "760410",
+                                "760421", "760429", "760511", "760519", "760521", "760529",
+                                "760611", "760612", "760691", "760692"]),
+    ("Aluminium", CAT_FINI, ["761090", "761100", "761510"]),
+    ("Zinc", CAT_MP, ["260800", "281700"]),
+    ("Zinc", CAT_ALLIAGE, ["790111", "790112", "790120", "790200", "790310", "790400", "790500"]),
+    ("Zinc", CAT_FINI, ["790700"]),
 ]
 
 # code HS6 -> {"mineral": ..., "categorie": ...}
