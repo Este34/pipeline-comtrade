@@ -3,12 +3,12 @@
 import { esc } from "./format.js";
 
 const VUES = [
+  { key: "flux", label: "Flux" },
+  { key: "mineraux", label: "Minéraux critiques" },
   { key: "profil", label: "Profil pays" },
   { key: "bilateral", label: "Analyse bilatérale" },
   { key: "produit", label: "Analyse par produit" },
   { key: "carto", label: "Cartes et séries" },
-  { key: "mineraux", label: "Minéraux critiques" },
-  { key: "flux", label: "Flux" },
 ];
 
 // onGoToView(key) et onOpenCountry(iso3) sont fournies par main.js.

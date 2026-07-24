@@ -6,7 +6,8 @@ import { fmtMetric, axisFmt, pct, downloadCsv } from "../format.js";
 import { pays } from "../labels.js";
 import {
   selectHTML, anneeOptions, fluxOptions, metricOptions, ctrl, kpisHTML, renderTable, card,
-  renderChips, skeletonKpis, mineralOptions, champCodeHTML, normaliserCode, ANNEES,
+  renderChips, skeletonKpis, mineralOptions, champCodeHTML, normaliserCode,
+  multiSelectHTML, wireMultiSelect, ANNEES,
 } from "../ui.js";
 import { barChart, lineChart } from "../charts.js";
 import { interactiveMap } from "../map.js";
@@ -24,9 +25,7 @@ export async function mount(container, { labels }) {
     <div class="filterbar">
       ${ctrl("Minéral critique", selectHTML("mc-min", mineralOptions(labels), "Lithium"), true)}
       <div class="ctrl grow"><label>Catégories (chaîne de valeur)</label>
-        <select id="mc-cat" multiple size="3">
-          ${CATEGORIES.map((c) => `<option value="${c}" selected>${c}</option>`).join("")}
-        </select></div>
+        ${multiSelectHTML("mc-cat", CATEGORIES.map((c) => ({ value: c, label: c })), CATEGORIES)}</div>
       ${ctrl("Code NC8 / HS6 (optionnel)", champCodeHTML("mc-code", "ex : 85076000 ou 850760"))}
       ${ctrl("Année", selectHTML("mc-annee", anneeOptions(), 2023))}
       ${ctrl("Flux", selectHTML("mc-flux", fluxOptions(), "X"))}
@@ -41,17 +40,18 @@ export async function mount(container, { labels }) {
 
   const res = container.querySelector("#mc-res");
   const chipsEl = container.querySelector("#mc-chips");
+  const cats = wireMultiSelect("mc-cat");
 
   function majChips() {
     const annee = document.getElementById("mc-annee");
     const flux = document.getElementById("mc-flux");
     const metric = document.getElementById("mc-metric");
     const code = document.getElementById("mc-code");
-    const cats = [...document.getElementById("mc-cat").selectedOptions].map((o) => o.value);
+    const choisies = [...document.getElementById("mc-cat").selectedOptions].map((o) => o.value);
     const items = [
       { label: "Minéral", value: container.querySelector("#mc-min").value, onReset: () => { container.querySelector("#mc-min").value = "Lithium"; analyser(); } },
-      { label: "Catégories", value: cats.length === CATEGORIES.length ? "toutes" : `${cats.length}/${CATEGORIES.length}`,
-        onReset: () => { [...document.getElementById("mc-cat").options].forEach((o) => (o.selected = true)); analyser(); } },
+      { label: "Catégories", value: choisies.length === CATEGORIES.length ? "toutes" : `${choisies.length}/${CATEGORIES.length}`,
+        onReset: () => { cats.setTout(true); analyser(); } },
       { label: "Année", value: annee.value, onReset: () => { annee.value = "2023"; analyser(); } },
       { label: "Flux", value: flux.options[flux.selectedIndex].text, onReset: () => { flux.value = "X"; analyser(); } },
       { label: "Mesure", value: metric.options[metric.selectedIndex].text, onReset: () => { metric.value = "valeur"; analyser(); } },

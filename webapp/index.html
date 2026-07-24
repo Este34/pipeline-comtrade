@@ -17,12 +17,12 @@
       <span>Commerce international</span>
     </div>
     <nav id="tabs" class="pillnav" role="tablist" aria-label="Vues d'analyse">
-      <button class="tab active" data-view="profil" role="tab" id="tab-profil" aria-selected="true" aria-controls="view-profil">Profil pays</button>
+      <button class="tab active" data-view="flux" role="tab" id="tab-flux" aria-selected="true" aria-controls="view-flux">Flux</button>
+      <button class="tab" data-view="mineraux" role="tab" id="tab-mineraux" aria-selected="false" aria-controls="view-mineraux" tabindex="-1">Minéraux critiques</button>
+      <button class="tab" data-view="profil" role="tab" id="tab-profil" aria-selected="false" aria-controls="view-profil" tabindex="-1">Profil pays</button>
       <button class="tab" data-view="bilateral" role="tab" id="tab-bilateral" aria-selected="false" aria-controls="view-bilateral" tabindex="-1">Analyse bilatérale</button>
       <button class="tab" data-view="produit" role="tab" id="tab-produit" aria-selected="false" aria-controls="view-produit" tabindex="-1">Analyse par produit</button>
       <button class="tab" data-view="carto" role="tab" id="tab-carto" aria-selected="false" aria-controls="view-carto" tabindex="-1">Cartes et séries</button>
-      <button class="tab" data-view="mineraux" role="tab" id="tab-mineraux" aria-selected="false" aria-controls="view-mineraux" tabindex="-1">Minéraux critiques</button>
-      <button class="tab" data-view="flux" role="tab" id="tab-flux" aria-selected="false" aria-controls="view-flux" tabindex="-1">Flux</button>
     </nav>
     <button type="button" class="search-trigger" id="paletteBtn" aria-haspopup="dialog">
       <span aria-hidden="true">&#9906;</span> Rechercher <span class="kbd" id="kbdHint">Ctrl K</span>
@@ -33,12 +33,12 @@
 <div id="status" role="status" aria-live="polite" aria-atomic="true">Initialisation de la base de données…</div>
 
 <main id="app" style="max-width:1320px;margin:0 auto;padding:14px 16px 24px">
-  <section class="page active" id="view-profil" role="tabpanel" aria-labelledby="tab-profil" tabindex="0"></section>
+  <section class="page active" id="view-flux" role="tabpanel" aria-labelledby="tab-flux" tabindex="0"></section>
+  <section class="page" id="view-mineraux" role="tabpanel" aria-labelledby="tab-mineraux" tabindex="0"></section>
+  <section class="page" id="view-profil" role="tabpanel" aria-labelledby="tab-profil" tabindex="0"></section>
   <section class="page" id="view-bilateral" role="tabpanel" aria-labelledby="tab-bilateral" tabindex="0"></section>
   <section class="page" id="view-produit" role="tabpanel" aria-labelledby="tab-produit" tabindex="0"></section>
   <section class="page" id="view-carto" role="tabpanel" aria-labelledby="tab-carto" tabindex="0"></section>
-  <section class="page" id="view-mineraux" role="tabpanel" aria-labelledby="tab-mineraux" tabindex="0"></section>
-  <section class="page" id="view-flux" role="tabpanel" aria-labelledby="tab-flux" tabindex="0"></section>
 </main>
 
 <footer class="cea-banner">

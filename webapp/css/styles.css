@@ -375,6 +375,20 @@ td[data-sume]::after{content:' %'}
 .palette-item[aria-selected="true"]{background:var(--blue-france);color:#fff}
 .palette-empty{padding:24px;text-align:center;color:var(--muted);font-size:13px}
 
+/* liste à choix multiples au simple clic */
+.multi-wrap{display:flex;flex-direction:column;gap:5px;min-width:0}
+.multi-recherche{width:100%}
+.multi-compte{font-size:11.5px;color:var(--muted);padding-left:2px}
+.multi{display:flex;flex-direction:column;gap:2px;max-height:172px;overflow-y:auto;background:#fff;
+  border:1px solid var(--border);border-radius:8px;padding:4px}
+.multi-opt[hidden]{display:none}
+.multi-opt{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;font-size:13px;
+  cursor:pointer;transition:background .12s ease}
+.multi-opt:hover{background:var(--blue-lighter)}
+.multi-opt input{accent-color:var(--blue-france);width:15px;height:15px;cursor:pointer;flex:none}
+.multi-opt:has(input:checked){background:var(--blue-light);font-weight:600;color:var(--dark)}
+.multi-opt:focus-within{outline:2px solid var(--blue-france);outline-offset:-2px}
+
 /* diagramme de Sankey (vue Flux) */
 .sankey{display:block;width:100%;height:auto;overflow:visible}
 .sankey-lien{transition:fill-opacity .15s ease}
@@ -394,7 +408,7 @@ td[data-sume]::after{content:' %'}
 
 @media(prefers-reduced-motion:reduce){
   .skel::after{animation:none}
-  .totop,.chip button,.tab,.search-trigger,.sankey-lien{transition:none}
+  .totop,.chip button,.tab,.search-trigger,.sankey-lien,.multi-opt{transition:none}
 }
 
 /* bandeau institutionnel CEA (bas de page) */

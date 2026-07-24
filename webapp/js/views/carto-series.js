@@ -4,7 +4,8 @@ import { query, srcAggregat, srcDetail, sqlStr } from "../db.js";
 import { axisFmt, fmtMetric, downloadCsv } from "../format.js";
 import { pays } from "../labels.js";
 import {
-  selectHTML, paysOptions, fluxOptions, metricOptions, ctrl, card, renderChips, ANNEES,
+  selectHTML, paysOptions, fluxOptions, metricOptions, ctrl, card, renderChips,
+  multiSelectHTML, wireMultiSelect, ANNEES,
 } from "../ui.js";
 import { lineChart } from "../charts.js";
 import { interactiveMap } from "../map.js";
@@ -29,10 +30,8 @@ export async function mount(container, { labels }) {
     <div id="ct-map"></div>
     <div class="filterbar" style="margin-top:14px">
       <div class="ctrl grow">
-        <label>Pays à comparer (Ctrl/Cmd pour plusieurs)</label>
-        <select id="ct-multi" multiple size="6">
-          ${opts.map((o) => `<option value="${o.value}"${["FRA", "DEU", "CHN", "USA"].includes(o.value) ? " selected" : ""}>${o.label}</option>`).join("")}
-        </select>
+        <label>Pays à comparer (cliquez pour cocher, ou cliquez un pays sur la carte)</label>
+        ${multiSelectHTML("ct-multi", opts, ["FRA", "DEU", "CHN", "USA"])}
       </div>
       <button class="btn" id="ct-cmp">Comparer l'évolution</button>
     </div>
@@ -41,6 +40,7 @@ export async function mount(container, { labels }) {
   const mapHost = container.querySelector("#ct-map");
   const serieHost = container.querySelector("#ct-serie");
   const multi = container.querySelector("#ct-multi");
+  const listePays = wireMultiSelect("ct-multi");
   const chipsEl = container.querySelector("#ct-chips");
 
   function majChips() {
@@ -79,7 +79,9 @@ export async function mount(container, { labels }) {
       onClick: (iso3) => {
         if (!iso3) return;
         const opt = [...multi.options].find((o) => o.value === iso3);
-        if (opt) { opt.selected = true; comparer(); }
+        // La sélection étant modifiée par programme ici, les cases à cocher
+        // doivent être resynchronisées pour rester le reflet fidèle du select.
+        if (opt) { opt.selected = true; listePays.sync(); comparer(); }
       },
     });
     c.querySelector("[data-export]").addEventListener("click", () =>

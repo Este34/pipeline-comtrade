@@ -108,9 +108,8 @@ python clean/clean_export.py --critical      # -> data/parquet/critical/
 
 Application **vanilla** (aucun framework, aucun build) à identité **DSFR**, qui
 interroge les Parquet directement dans le navigateur via **DuckDB-WASM**
-(vendorisé, 100 % hors-ligne). Six vues : Profil pays, Analyse bilatérale,
-Analyse par produit, Cartes & séries, Minéraux critiques, Flux. Libellés en
-français.
+(vendorisé, 100 % hors-ligne). Six vues : Flux, Minéraux critiques, Profil pays,
+Analyse bilatérale, Analyse par produit, Cartes & séries. Libellés en français.
 
 Fonctionnalités clés :
 - **Bascule Valeur (US$) / Poids (t)** dans chaque vue. Le poids (`netWgt`) est
@@ -139,6 +138,14 @@ Fonctionnalités clés :
   La précision atteinte suit celle de l'extraction : **HS6 exact** sur les
   minéraux critiques et les flux, **chapitre à 2 chiffres** sur le jeu principal,
   où `85076000` sélectionne le chapitre `85`.
+- **Listes à choix multiples au simple clic**. Un `<select multiple>` natif
+  impose Ctrl/Cmd, que personne ne devine et qui rend un clic seul destructeur
+  (il efface toute la sélection). L'affichage passe donc par de vraies cases à
+  cocher, doublées d'un `<select>` masqué qui reste la source de vérité : les
+  vues continuent de lire `selectedOptions`, y compris quand la sélection est
+  pilotée depuis la carte. Au-delà de douze entrées un filtre de recherche est
+  ajouté, sans quoi on perdrait la saisie semi-automatique du select natif sur
+  la liste des 240 pays.
 - **Navigation** : barre de contrôle sticky en verre (logo Isec, onglets en
   pilules), **palette de commandes** (`Ctrl`/`Cmd` + `K`) pour sauter à une vue
   ou ouvrir directement le profil d'un pays, **combobox avec recherche**

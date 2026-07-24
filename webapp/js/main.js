@@ -87,7 +87,7 @@ async function boot() {
       document.getElementById("kbdHint").textContent = "⌘K";
     }
 
-    await activer("profil");
+    await activer("flux");
   } catch (e) {
     setStatus("Erreur d'initialisation : " + e.message, true);
     console.error(e);

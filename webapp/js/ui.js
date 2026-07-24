@@ -20,6 +20,95 @@ export function paysOptions(labels) {
     .sort((a, b) => a.label.localeCompare(b.label, "fr"));
 }
 
+// Liste à choix multiples utilisable au simple clic.
+//
+// Un `<select multiple>` natif impose Ctrl/Cmd pour cocher plusieurs entrées :
+// personne ne le devine, et un clic seul efface toute la sélection précédente.
+// On affiche donc de vraies cases à cocher, doublées d'un `<select multiple>`
+// masqué qui reste la source de vérité. Les vues continuent de lire
+// `selectedOptions` et d'écouter l'événement `change` sans rien changer, et la
+// sélection reste pilotable par programme (clic sur la carte, réinitialisation
+// d'une puce) via `sync()`.
+// Au-delà de ce nombre d'entrées, un filtre de recherche est ajouté : un
+// `<select>` natif offrait la saisie semi-automatique (taper « fr » saute à
+// France), qu'une liste de cases à cocher perd. Sans lui, remplacer le select
+// dégraderait la recherche d'un pays au lieu de l'améliorer.
+const SEUIL_RECHERCHE = 12;
+
+export function multiSelectHTML(id, options, selectionnees = []) {
+  const estSel = (v) => selectionnees.map(String).includes(String(v));
+  const cases = options
+    .map(
+      (o) => `<label class="multi-opt"><input type="checkbox" value="${esc(o.value)}"${estSel(o.value) ? " checked" : ""}>
+        <span>${esc(o.label)}</span></label>`
+    )
+    .join("");
+  const opts = options
+    .map((o) => `<option value="${esc(o.value)}"${estSel(o.value) ? " selected" : ""}>${esc(o.label)}</option>`)
+    .join("");
+  const recherche =
+    options.length > SEUIL_RECHERCHE
+      ? `<input type="search" class="multi-recherche" id="${id}-q" autocomplete="off"
+           placeholder="Filtrer la liste..." aria-label="Filtrer la liste">`
+      : "";
+  return `<div class="multi-wrap">${recherche}
+    <div class="multi" id="${id}-cases" role="group">${cases}</div>
+    <div class="multi-compte" id="${id}-compte" aria-live="polite"></div></div>
+    <select id="${id}" multiple hidden tabindex="-1" aria-hidden="true">${opts}</select>`;
+}
+
+// Câble une liste générée par multiSelectHTML(). Renvoie { sync, setTout }.
+export function wireMultiSelect(id) {
+  const select = document.getElementById(id);
+  const boite = document.getElementById(`${id}-cases`);
+  const compte = document.getElementById(`${id}-compte`);
+  const q = document.getElementById(`${id}-q`);
+
+  function majCompte() {
+    const n = select.selectedOptions.length;
+    compte.textContent = n === 0 ? "Aucune sélection" : `${n} sélectionné${n > 1 ? "s" : ""}`;
+  }
+
+  boite.addEventListener("change", (e) => {
+    const c = e.target;
+    if (!c.matches('input[type="checkbox"]')) return;
+    const opt = [...select.options].find((o) => o.value === c.value);
+    if (opt) opt.selected = c.checked;
+    majCompte();
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+
+  if (q) {
+    q.addEventListener("input", () => {
+      const terme = q.value.trim().toLowerCase();
+      for (const label of boite.querySelectorAll(".multi-opt")) {
+        // Une entrée cochée reste visible même si elle ne correspond pas au
+        // filtre : la masquer donnerait l'illusion de l'avoir désélectionnée.
+        const coche = label.querySelector("input").checked;
+        label.hidden = !coche && !label.textContent.toLowerCase().includes(terme);
+      }
+    });
+  }
+
+  // Recopie l'état du select vers les cases, après une modification programmée.
+  function sync() {
+    for (const c of boite.querySelectorAll('input[type="checkbox"]')) {
+      const opt = [...select.options].find((o) => o.value === c.value);
+      c.checked = !!opt?.selected;
+    }
+    majCompte();
+  }
+
+  majCompte();
+  return {
+    sync,
+    setTout(valeur) {
+      for (const o of select.options) o.selected = valeur;
+      sync();
+    },
+  };
+}
+
 // Champ de recherche par code produit.
 //
 // La saisie accepte un code NC8 (nomenclature combinée européenne, 8 chiffres),
