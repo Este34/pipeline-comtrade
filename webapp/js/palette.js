@@ -8,6 +8,7 @@ const VUES = [
   { key: "produit", label: "Analyse par produit" },
   { key: "carto", label: "Cartes et séries" },
   { key: "mineraux", label: "Minéraux critiques" },
+  { key: "flux", label: "Flux" },
 ];
 
 // onGoToView(key) et onOpenCountry(iso3) sont fournies par main.js.

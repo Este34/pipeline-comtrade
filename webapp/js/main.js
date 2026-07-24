@@ -10,8 +10,9 @@ import * as bilateral from "./views/bilateral.js";
 import * as produit from "./views/produit.js";
 import * as carto from "./views/carto-series.js";
 import * as mineraux from "./views/mineraux-critiques.js";
+import * as flux from "./views/flux-sankey.js";
 
-const VIEWS = { profil, bilateral, produit, carto, mineraux };
+const VIEWS = { profil, bilateral, produit, carto, mineraux, flux };
 const monte = {}; // vues déjà montées (montage unique)
 
 let ctx = null;

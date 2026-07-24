@@ -20,6 +20,13 @@ export function paysOptions(labels) {
     .sort((a, b) => a.label.localeCompare(b.label, "fr"));
 }
 
+// Options minéraux, dédoublonnées depuis la table des codes HS6 et triées FR.
+export function mineralOptions(labels) {
+  return [...new Set(Object.values(labels.minerals).map((v) => v.mineral))]
+    .sort((a, b) => a.localeCompare(b, "fr"))
+    .map((m) => ({ value: m, label: m }));
+}
+
 export function anneeOptions() {
   return ANNEES.map((y) => ({ value: y, label: String(y) })).reverse();
 }

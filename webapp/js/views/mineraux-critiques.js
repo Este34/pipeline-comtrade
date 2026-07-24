@@ -6,7 +6,7 @@ import { fmtMetric, axisFmt, pct, downloadCsv } from "../format.js";
 import { pays } from "../labels.js";
 import {
   selectHTML, anneeOptions, fluxOptions, metricOptions, ctrl, kpisHTML, renderTable, card,
-  renderChips, skeletonKpis, ANNEES,
+  renderChips, skeletonKpis, mineralOptions, ANNEES,
 } from "../ui.js";
 import { barChart, lineChart } from "../charts.js";
 import { interactiveMap } from "../map.js";
@@ -17,11 +17,6 @@ let _geo = null;
 async function geo() {
   if (!_geo) _geo = await (await fetch("vendor/world.geo.json")).json();
   return _geo;
-}
-
-function mineralOptions(labels) {
-  const uniques = [...new Set(Object.values(labels.minerals).map((v) => v.mineral))].sort((a, b) => a.localeCompare(b, "fr"));
-  return uniques.map((m) => ({ value: m, label: m }));
 }
 
 export async function mount(container, { labels }) {

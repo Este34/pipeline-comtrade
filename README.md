@@ -108,8 +108,9 @@ python clean/clean_export.py --critical      # -> data/parquet/critical/
 
 Application **vanilla** (aucun framework, aucun build) à identité **DSFR**, qui
 interroge les Parquet directement dans le navigateur via **DuckDB-WASM**
-(vendorisé, 100 % hors-ligne). Cinq vues : Profil pays, Analyse bilatérale,
-Analyse par produit, Cartes & séries, Minéraux critiques. Libellés en français.
+(vendorisé, 100 % hors-ligne). Six vues : Profil pays, Analyse bilatérale,
+Analyse par produit, Cartes & séries, Minéraux critiques, Flux. Libellés en
+français.
 
 Fonctionnalités clés :
 - **Bascule Valeur (US$) / Poids (t)** dans chaque vue. Le poids (`netWgt`) est
@@ -124,6 +125,13 @@ Fonctionnalités clés :
   alliage/demi-produit → produit fini (batteries, aimants, catalyseurs…), avec
   **filtre par catégorie** et **recherche par code HS6**. *Rappel : un produit
   fini contient le minéral sans en indiquer la teneur.*
+- **Flux (Sankey)** : diagramme de flux en SVG écrit à la main (aucune
+  dépendance ajoutée), sous deux angles. *Chaîne de valeur* : exportateurs →
+  matière première / alliage / produit fini → importateurs, pour voir qui vend
+  du brut et qui vend du transformé. *Pays au centre* : fournisseurs → pays
+  choisi → clients, pour lire une dépendance nationale. La bascule poids/valeur
+  y est particulièrement parlante : le nickel 2023 pèse 93 % de matière première
+  en tonnage contre une part bien moindre en valeur.
 - **Navigation** : barre de contrôle sticky en verre (logo Isec, onglets en
   pilules), **palette de commandes** (`Ctrl`/`Cmd` + `K`) pour sauter à une vue
   ou ouvrir directement le profil d'un pays, **combobox avec recherche**
@@ -248,7 +256,7 @@ webapp/                  # Phase 3, application d'analyse offline (DSFR)
 ├── index.html          # Coquille + onglets
 ├── css/, assets/         # Styles DSFR + police Marianne
 ├── vendor/               # DuckDB-WASM, Chart.js, apache-arrow, fond de carte
-├── js/                    # db.js (DuckDB-WASM), charts, format, labels + views/
+├── js/                    # db.js (DuckDB-WASM), charts, sankey, format, labels + views/
 └── data/                   # reference/*.json (FR) + parquet/ (jonction/copie)
 data/
 ├── raw/, raw_critical/   # Réponses brutes {reporterCode}_{year}.csv
