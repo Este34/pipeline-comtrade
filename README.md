@@ -129,6 +129,57 @@ tronquées sans le signaler. Il filtre aussi sur la même liste de déclarants q
 l'extraction principale, sinon les groupes agrégés (UE, ASEAN) entreraient dans
 le complément et fausseraient les totaux par rapport aux minéraux déjà extraits.
 
+### Taxonomie des matières : quatre stades, et une forme par code
+
+Les trois catégories initiales (« Matière première » / « Alliage / demi-produit »
+/ « Produit fini ») mélangeaient des étapes industrielles distinctes. « Matière
+première » réunissait le minerai sorti du sol et l'oxyde issu d'une usine
+chimique ; « Alliage / demi-produit » réunissait le métal brut sortant du
+raffinage et la tôle laminée — et personne ne comprenait ce que le libellé
+désignait. Le pays qui extrait est rarement celui qui raffine : confondre les
+deux revient à effacer la question qu'on vient poser à ces données.
+
+`scraper/config.py → STADES` définit donc quatre stades, du sol au produit
+manufacturé :
+
+| id | libellé | contenu |
+|---|---|---|
+| `extraction` | Extraction — minerai & concentré | minerais, concentrés, résidus valorisés |
+| `raffinage` | Raffinage — oxydes, sels & métal brut | oxydes, sels, mattes, métal non ouvré |
+| `transformation` | Transformation — alliages & demi-produits | ferro-alliages, barres, tôles, fils, poudres, déchets |
+| `fini` | Produit fini | batteries, aimants, catalyseurs, cellules PV, câbles |
+
+Chaque code HS6 porte en plus une **forme** (`minerai`, `concentré`, `cendre &
+résidu`, `oxyde & hydroxyde`, `sel & composé chimique`, `métal brut`, `alliage`,
+`poudre`, `demi-produit ouvré`, `déchet & débris`, `pigment`, `produit fini`,
+`matière raffinée`) et un **libellé FR**. La forme est ce qui distingue une
+origine primaire d'une origine secondaire — un flux de déchets de cuivre n'est
+pas un flux de minerai, alors que les deux relèvent du même minéral.
+
+### Ajouter, retirer ou reclasser un minéral
+
+La taxonomie est **découplée des Parquet**. `clean_export.py` écrit bien des
+colonnes `mineral` et `categorie` dans `data/parquet/critical/`, mais la webapp
+**ne les lit plus** : elle part de `webapp/data/reference/materiaux_fr.json`,
+convertit la sélection en liste de codes HS6, et filtre sur `cmdCode`.
+
+Ce détour n'est pas gratuit, il résout un blocage précis. Les Parquet pèsent
+~290 Mo, sont exclus de git et publiés en release GitHub. Tant que la taxonomie y
+était figée, renommer un maillon ou reclasser un code imposait de tout
+ré-exporter depuis `data/comtrade.duckdb`, puis de republier l'archive — et
+cassait l'application pour quiconque avait encore l'ancien jeu.
+
+```bash
+# 1. éditer scraper/config.py -> _MATIERES (stade, forme, libellé, codes)
+python clean/labels_fr.py     # régénère webapp/data/reference/materiaux_fr.json (~47 Ko)
+```
+
+C'est tout : ni ré-export, ni redéploiement des données. **La limite à connaître**
+est ailleurs : reclasser ou retirer un code déjà extrait est immédiat, mais
+*ajouter* un minéral absent du jeu de données demande une extraction
+(`fetch_complement.py`), l'API étant payante. Un code ajouté à la config sans
+extraction apparaîtra dans le référentiel avec zéro flux.
+
 ### Fiabilité du poids déclaré (`netWgt`)
 
 Le tonnage vient des déclarations douanières et n'est pas toujours cohérent avec
@@ -163,17 +214,24 @@ Fonctionnalités clés :
   clic pays. Le **fond de carte tuilé est chargé en ligne** (habillage
   uniquement) ; **les données restent 100 % offline** (DuckDB-WASM). Sans réseau,
   les pays colorés s'affichent quand même, sans le fond.
-- **Minéraux critiques** : 207 codes HS6 sur 27 minéraux, couvrant la chaîne matière première →
-  alliage/demi-produit → produit fini (batteries, aimants, catalyseurs…), avec
-  **filtre par catégorie** et **recherche par code HS6**. *Rappel : un produit
-  fini contient le minéral sans en indiquer la teneur.*
-- **Flux (Sankey)** : diagramme de flux en SVG écrit à la main (aucune
-  dépendance ajoutée), sous deux angles. *Chaîne de valeur* : exportateurs →
-  matière première / alliage / produit fini → importateurs, pour voir qui vend
-  du brut et qui vend du transformé. *Pays au centre* : fournisseurs → pays
-  choisi → clients, pour lire une dépendance nationale. La bascule poids/valeur
-  y est particulièrement parlante : le nickel 2023 pèse 93 % de matière première
-  en tonnage contre une part bien moindre en valeur.
+- **Minéraux critiques** : 207 codes HS6 sur 27 minéraux, couvrant les quatre
+  stades de la chaîne (voir ci-dessous), avec **filtre par stade**, **recherche
+  par code HS6** et **composition du périmètre** affichée — la liste exacte des
+  positions sommées, sans laquelle un total reste invérifiable. *Rappel : un
+  produit fini contient le minéral sans en indiquer la teneur.*
+- **Flux** : diagramme de Sankey / alluvial en SVG écrit à la main (aucune
+  dépendance ajoutée), à N colonnes, sous **cinq angles** — chaîne de valeur,
+  dépendance d'un pays, origine d'un matériau, comparaison de minéraux, origine
+  détaillée au code HS6. Détail plus bas. La bascule poids/valeur y est
+  particulièrement parlante : le nickel 2023 pèse 93 % de matière brute en
+  tonnage contre une part bien moindre en valeur.
+- **Panier de matières éditable** (vue Flux) : minéraux, stades et formes se
+  combinent librement, la liste des formes s'ajustant aux minéraux retenus. Le
+  panier affiche en permanence **le nombre de positions HS6 réellement
+  sélectionnées**, et signale une combinaison impossible plutôt que de renvoyer
+  un graphe vide sans explication. L'état complet est **sérialisé dans l'URL**
+  (`#vue=flux&mode=comparer&min=Cuivre,Nickel&an=2023`) : une analyse se partage
+  par simple copie du lien, ce qui suffit pour un site statique.
 - **Recherche par code produit** (Minéraux critiques, Flux, Analyse par produit).
   La saisie accepte un **NC8** (nomenclature combinée européenne, 8 chiffres),
   un HS6 ou un HS2. Comtrade publie en HS, pas en NC : un NC8 n'existe donc pas
@@ -195,6 +253,36 @@ Fonctionnalités clés :
   remplaçant les `<select>` à liste longue (pays, chapitres HS), **puces de
   filtres actifs** retirables, **squelettes de chargement** pendant les
   requêtes DuckDB-WASM, bouton de retour en haut de page.
+
+### Les cinq angles de la vue Flux
+
+Le vocabulaire est celui des douanes : on parle d'**importations** et
+d'**exportations**, jamais de « fournisseurs » ni de « clients ». Un même pays
+est l'un et l'autre selon le sens du flux, et les deux mots suggéraient une
+relation commerciale que les statistiques ne décrivent pas.
+
+| Angle | Lecture | Question |
+|---|---|---|
+| **Chaîne de valeur** | exportateurs → stade → importateurs | qui vend du brut, qui vend du transformé ? |
+| **Dépendance d'un pays** | importations (origines) → pays → exportations (destinations) | de qui ce pays dépend, vers qui il réexporte ? |
+| **Origine d'un matériau** | classement des pays d'origine + miroir | d'où vient réellement cette matière ? |
+| **Comparer des minéraux** | origines → minéral → stade → destinations | comment se comparent plusieurs filières ? |
+| **Origine détaillée (HS6)** | origines → position HS6 → stade → destinations | quel produit précis, sous quelle forme ? |
+
+Les deux derniers angles sont des **diagrammes alluviaux à quatre colonnes** :
+`webapp/js/sankey.js` accepte désormais N colonnes, les colonnes intermédiaires
+étant dessinées en bandeaux porteurs de leur libellé. À trois colonnes, la
+géométrie est identique au Sankey d'origine.
+
+L'angle **Origine d'un matériau** affiche systématiquement le **miroir** des
+déclarations : ce que l'importateur déclare avoir reçu, face à ce que le pays
+d'origine déclare avoir expédié. Un écart durable entre les deux n'est pas du
+bruit — il signale une réexportation, un transbordement, ou une déclaration
+incomplète, et mérite d'être lu comme tel plutôt que moyenné.
+
+Rappel qui vaut pour les cinq angles : les douanes classent par **produit**, pas
+par teneur. Un tonnage de batteries n'est pas un tonnage de lithium, et aucune
+colonne du jeu de données ne permet de le convertir.
 
 ### Piège Leaflet : vider le conteneur ne détruit pas la carte
 
@@ -229,7 +317,7 @@ statique), le cache est au contraire souhaitable.
 ### Générer les libellés FR puis lancer en local
 
 ```bash
-python clean/labels_fr.py                    # webapp/data/reference/*.json (pays, chapitres, minéraux)
+python clean/labels_fr.py                    # webapp/data/reference/*.json (pays, chapitres, référentiel matières)
 python -m http.server 8000                    # depuis la RACINE du dépôt
 # puis ouvrir http://localhost:8000/webapp/
 ```
@@ -320,7 +408,7 @@ scraper/                # Phase 1, extraction
 clean/                   # Phase 2/3, nettoyage + export Parquet + libellés FR
 ├── enrich.py           # Mapping code pays → ISO3 + continent
 ├── clean_export.py      # Export Parquet partitionné + enrichi (+ --critical)
-└── labels_fr.py          # Libellés FR (pays, chapitres HS, minéraux) → JSON
+└── labels_fr.py          # Libellés FR + référentiel matières (stades, formes, HS6) → JSON
 deploy/                  # Déploiement Vercel
 ├── build.sh            # Build Vercel : récupère les données depuis la release
 └── package_assets.py    # Fabrique dist/webapp-assets.tar.gz à publier

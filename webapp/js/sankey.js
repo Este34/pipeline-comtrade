@@ -1,11 +1,14 @@
 // Diagramme de Sankey en SVG, écrit à la main : aucune dépendance ajoutée, et
 // l'habillage suit les mêmes jetons DSFR que le reste de l'application.
 //
-// Le graphe attendu a exactement trois colonnes (0, 1, 2) et pas de cycle, ce
-// qui permet un placement direct sans l'algorithme itératif d'un Sankey
-// généraliste. La colonne centrale est dessinée comme un bandeau large portant
-// son libellé à l'intérieur : c'est ce qui évite les collisions d'étiquettes au
-// milieu du graphe, là où les rubans sont les plus denses.
+// Le graphe attendu a N colonnes (0..N-1, N ≥ 2), les liens n'allant que d'une
+// colonne vers la suivante, et pas de cycle : ce placement direct évite
+// l'algorithme itératif d'un Sankey généraliste. Les colonnes intermédiaires
+// sont dessinées comme des bandeaux larges portant leur libellé à l'intérieur,
+// ce qui évite les collisions d'étiquettes au milieu du graphe, là où les
+// rubans sont les plus denses. Trois colonnes donnent un Sankey classique,
+// quatre ou plus un diagramme alluvial (origines → minéral → stade →
+// destinations).
 
 const NS = "http://www.w3.org/2000/svg";
 
@@ -17,16 +20,53 @@ const BARRE = 12;
 const BANDE = 150;
 const ECART = 10; // espace vertical entre deux nœuds d'une même colonne
 
-const X = {
-  0: { x: MARGE, w: BARRE },
-  1: { x: (L - BANDE) / 2, w: BANDE },
-  2: { x: L - MARGE - BARRE, w: BARRE },
-};
+// Géométrie horizontale pour n colonnes : les deux extrêmes sont des barres
+// fines collées aux marges (leurs étiquettes se posent à l'extérieur), les
+// intermédiaires des bandeaux répartis régulièrement dans l'espace restant.
+// Avec n = 3, la formule redonne exactement l'ancien placement centré.
+function geometrie(n) {
+  if (n < 2) return [{ x: MARGE, w: BARRE }];
+  const debut = MARGE + BARRE;
+  const fin = L - MARGE - BARRE;
+  const dispo = fin - debut;
+  const k = n - 2; // nombre de colonnes intermédiaires
+  // Au-delà de deux bandeaux, la largeur nominale mangerait tout l'espace des
+  // rubans : on la réduit plutôt que de laisser les courbes se tasser.
+  const bande = k > 0 ? Math.min(BANDE, (dispo * 0.6) / k) : 0;
+  const gap = k > 0 ? (dispo - k * bande) / (k + 1) : dispo;
+  const cols = [{ x: MARGE, w: BARRE }];
+  for (let i = 0; i < k; i++) cols.push({ x: debut + gap * (i + 1) + bande * i, w: bande });
+  cols.push({ x: fin, w: BARRE });
+  return cols;
+}
 
 function el(nom, attrs = {}) {
   const e = document.createElementNS(NS, nom);
   for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
   return e;
+}
+
+// Replie un libellé sur `max` caractères par ligne, au plus `nMax` lignes, la
+// dernière tronquée avec une ellipse. Un mot plus long que la ligne est coupé
+// net plutôt que de déborder du bandeau.
+function couperEnLignes(texte, max, nMax) {
+  const lignes = [];
+  let courante = "";
+  for (let mot of String(texte).split(/\s+/)) {
+    while (mot.length > max) {
+      if (courante) { lignes.push(courante); courante = ""; }
+      lignes.push(mot.slice(0, max));
+      mot = mot.slice(max);
+    }
+    if (!courante) courante = mot;
+    else if (courante.length + 1 + mot.length <= max) courante += " " + mot;
+    else { lignes.push(courante); courante = mot; }
+  }
+  if (courante) lignes.push(courante);
+  if (lignes.length <= nMax) return lignes;
+  const gardees = lignes.slice(0, nMax);
+  gardees[nMax - 1] = gardees[nMax - 1].slice(0, Math.max(1, max - 1)) + "…";
+  return gardees;
 }
 
 function titre(parent, texte) {
@@ -44,13 +84,15 @@ function chemin(x0, y0, x1, y1, ep) {
 }
 
 /**
- * Dessine un Sankey à trois colonnes.
+ * Dessine un Sankey / alluvial à N colonnes.
  * @param {HTMLElement} host conteneur (vidé au préalable)
  * @param {{nodes: Array, links: Array}} graphe
  *   nodes : [{ id, label, col, couleur }]
  *   links : [{ source, target, value, couleur }]
  * @param {{fmt: (v:number)=>string, hauteur?: number,
- *          entetes?: {gauche: string, centre: string, droite: string}}} opts
+ *          entetes?: string[] | {gauche: string, centre: string, droite: string}}} opts
+ *   entetes accepte un tableau (un libellé par colonne) ; la forme
+ *   {gauche, centre, droite} reste acceptée pour les appels à trois colonnes.
  */
 export function sankey(host, { nodes, links }, { fmt, hauteur, entetes } = {}) {
   host.innerHTML = "";
@@ -69,9 +111,14 @@ export function sankey(host, { nodes, links }, { fmt, hauteur, entetes } = {}) {
 
   // Colonnes, dans l'ordre fourni par l'appelant : c'est lui qui porte le sens
   // métier (ordre de la chaîne de valeur, classement décroissant...).
-  const cols = [0, 1, 2].map((c) => nodes.filter((n) => n.col === c).map((n) => parId.get(n.id)).filter((n) => n.valeur > 0));
+  const nbCols = Math.max(2, ...nodes.map((n) => (n.col || 0) + 1));
+  const X = geometrie(nbCols);
+  const cols = Array.from({ length: nbCols }, (_, c) =>
+    nodes.filter((n) => n.col === c).map((n) => parId.get(n.id)).filter((n) => n.valeur > 0));
 
-  const H = hauteur || Math.max(420, Math.max(cols[0].length, cols[2].length) * 30);
+  // La hauteur suit la colonne la plus peuplée : sur un alluvial, ce n'est plus
+  // forcément une colonne d'extrémité.
+  const H = hauteur || Math.max(420, Math.max(...cols.map((c) => c.length)) * 30);
 
   // Une seule échelle pour toutes les colonnes, sinon l'épaisseur d'un même
   // ruban changerait entre son départ et son arrivée.
@@ -96,7 +143,11 @@ export function sankey(host, { nodes, links }, { fmt, hauteur, entetes } = {}) {
 
   // Bandeau d'en-têtes : nomme explicitement ce que porte chaque colonne, et
   // matérialise le sens de lecture par des chevrons entre les colonnes.
-  const HAUT = entetes ? 52 : 0;
+  // La forme historique {gauche, centre, droite} est convertie en tableau.
+  const libelles = Array.isArray(entetes)
+    ? entetes
+    : entetes ? [entetes.gauche, entetes.centre, entetes.droite] : null;
+  const HAUT = libelles ? 52 : 0;
 
   const svg = el("svg", {
     viewBox: `0 0 ${L} ${H + HAUT}`,
@@ -106,20 +157,22 @@ export function sankey(host, { nodes, links }, { fmt, hauteur, entetes } = {}) {
     preserveAspectRatio: "xMidYMid meet",
   });
 
-  if (entetes) {
+  if (libelles) {
     const gEntetes = el("g", { class: "sankey-entetes" });
-    const cols = [
-      { texte: entetes.gauche, x: X[0].x + X[0].w, ancre: "end" },
-      { texte: entetes.centre, x: X[1].x + X[1].w / 2, ancre: "middle" },
-      { texte: entetes.droite, x: X[2].x, ancre: "start" },
-    ];
-    for (const c of cols) {
-      const t = el("text", { x: c.x, y: 20, "text-anchor": c.ancre, class: "sankey-entete" });
-      t.textContent = c.texte;
+    for (let c = 0; c < nbCols; c++) {
+      const g = X[c];
+      const ancre = c === 0 ? "end" : c === nbCols - 1 ? "start" : "middle";
+      const x = c === 0 ? g.x + g.w : c === nbCols - 1 ? g.x : g.x + g.w / 2;
+      const t = el("text", { x, y: 20, "text-anchor": ancre, class: "sankey-entete" });
+      t.textContent = libelles[c] || "";
       gEntetes.appendChild(t);
     }
-    for (const x of [(X[0].x + X[0].w + X[1].x) / 2, (X[1].x + X[1].w + X[2].x) / 2]) {
-      const fleche = el("text", { x, y: 21, "text-anchor": "middle", class: "sankey-fleche" });
+    // Chevrons dans chaque intervalle : ils matérialisent le sens de lecture.
+    for (let c = 0; c < nbCols - 1; c++) {
+      const fleche = el("text", {
+        x: (X[c].x + X[c].w + X[c + 1].x) / 2, y: 21,
+        "text-anchor": "middle", class: "sankey-fleche",
+      });
       fleche.textContent = "❯";
       gEntetes.appendChild(fleche);
     }
@@ -166,21 +219,26 @@ export function sankey(host, { nodes, links }, { fmt, hauteur, entetes } = {}) {
   for (const n of parId.values()) {
     if (!n.h) continue;
     const g = X[n.col];
+    const intermediaire = n.col > 0 && n.col < nbCols - 1;
     const rect = el("rect", {
       x: g.x, y: n.y, width: g.w, height: Math.max(1, n.h),
-      rx: n.col === 1 ? 4 : 2,
+      rx: intermediaire ? 4 : 2,
       fill: n.couleur || "var(--blue-france)",
       class: "sankey-noeud",
       "data-id": n.id,
     });
-    titre(rect, `${n.label} : ${fmt(n.valeur)}`);
+    // `titre` porte le libellé complet quand `label` a dû être raccourci pour
+    // tenir dans le bandeau (intitulés de positions HS6, notamment).
+    titre(rect, `${n.titre || n.label} : ${fmt(n.valeur)}`);
     gNoeuds.appendChild(rect);
 
     const milieu = n.y + n.h / 2;
-    if (n.col === 1) {
-      // Libellé à l'intérieur du bandeau central, sur deux lignes si besoin.
-      const mots = n.label.split(" ");
-      const lignes = mots.length > 2 ? [mots.slice(0, 2).join(" "), mots.slice(2).join(" ")] : [n.label];
+    if (intermediaire) {
+      // Libellé à l'intérieur du bandeau, replié sur la largeur disponible.
+      // Un intitulé de position HS6 dépasse largement le bandeau : on le coupe
+      // par mots, et on tronque au-delà de trois lignes — le libellé complet
+      // reste accessible en infobulle.
+      const lignes = couperEnLignes(n.label, Math.max(8, Math.floor(g.w / 7)), 3);
       lignes.forEach((ligne, i) => {
         const txt = el("text", {
           x: g.x + g.w / 2, y: milieu + (i - (lignes.length - 1) / 2) * 15 + 5,
@@ -217,7 +275,9 @@ export function sankey(host, { nodes, links }, { fmt, hauteur, entetes } = {}) {
     });
   });
 
-  const total = cols[1].reduce((s, n) => s + n.valeur, 0);
+  // Le flux étant conservé d'une colonne à l'autre, n'importe laquelle donne le
+  // total ; on prend le maximum pour rester juste si une colonne est tronquée.
+  const total = Math.max(...cols.map((c) => c.reduce((s, n) => s + n.valeur, 0)));
   svg.setAttribute("aria-label", `Diagramme de flux : ${nodes.length} nœuds, ${utiles.length} liens, total ${fmt(total)}.`);
   host.appendChild(svg);
 }

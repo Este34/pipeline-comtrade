@@ -1,6 +1,7 @@
 // Constructeurs d'UI réutilisables : contrôles de filtre, cartes KPI, tableaux
 // de résultats lisibles (triables). Remplace la grille brute de Comtrade.
 import { esc } from "./format.js";
+import { mineraux, stades, formesPour, formeLabel } from "./labels.js";
 
 // Années couvertes par le jeu de données.
 export const ANNEES = Array.from({ length: 26 }, (_, i) => 2000 + i);
@@ -129,11 +130,19 @@ export function normaliserCode(saisie) {
   return { chiffres, hs2: chiffres.slice(0, 2), hs6: chiffres.slice(0, 6) };
 }
 
-// Options minéraux, dédoublonnées depuis la table des codes HS6 et triées FR.
+// Options minéraux, dédoublonnées depuis le référentiel matières et triées FR.
 export function mineralOptions(labels) {
-  return [...new Set(Object.values(labels.minerals).map((v) => v.mineral))]
-    .sort((a, b) => a.localeCompare(b, "fr"))
-    .map((m) => ({ value: m, label: m }));
+  return mineraux(labels).map((m) => ({ value: m, label: m }));
+}
+
+// Options des 4 stades de la chaîne de valeur, dans l'ordre industriel.
+export function stadeOptions(labels) {
+  return stades(labels).map((s) => ({ value: s.id, label: s.label }));
+}
+
+// Options des formes présentes dans la sélection de minéraux en cours.
+export function formeOptions(labels, mins) {
+  return formesPour(labels, mins).map((f) => ({ value: f, label: formeLabel(labels, f) }));
 }
 
 export function anneeOptions() {
