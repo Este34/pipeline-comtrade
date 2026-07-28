@@ -49,7 +49,7 @@ REQUIS=(
   "webapp/data/parquet/reference/reporters.parquet"
   "webapp/data/reference/countries_fr.json"
   "webapp/data/reference/hs_chapters_fr.json"
-  "webapp/data/reference/minerals_fr.json"
+  "webapp/data/reference/materiaux_fr.json"
   "webapp/data/reference/flows_fr.json"
   "webapp/index.html"
 )
