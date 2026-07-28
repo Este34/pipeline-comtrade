@@ -58,6 +58,9 @@ PARQUET_DETAIL_DIR = PARQUET_DIR / "detail"
 PARQUET_AGGREGAT_DIR = PARQUET_DIR / "aggregat"
 PARQUET_REFERENCE_DIR = PARQUET_DIR / "reference"
 PARQUET_CRITICAL_DIR = PARQUET_DIR / "critical"
+# Pré-agrégat du jeu critique (partenaire World, une ligne par année/pays/code/flux) :
+# alimente les vues qui balayent les 26 années sans avoir besoin du bilatéral.
+PARQUET_CRITICAL_AGG_DIR = PARQUET_DIR / "critical_agg"
 
 # --- Phase 3 : extraction HS6 minéraux critiques (dataset dédié) ---
 # Chemins séparés pour ne pas mélanger avec le run HS2 principal.

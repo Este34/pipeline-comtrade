@@ -6,7 +6,7 @@
 // Le périmètre produit vient du référentiel materiaux_fr.json et non des
 // colonnes `mineral` / `categorie` des Parquet, figées depuis l'export : la
 // sélection est convertie en liste de codes HS6 puis appliquée sur `cmdCode`.
-import { query, srcCritical, sqlStr, clauseCodes } from "../db.js";
+import { query, srcCriticalAgg, sqlStr, clauseCodes } from "../db.js";
 import { fmtMetric, axisFmt, pct, downloadCsv } from "../format.js";
 import { pays, stades, stadeLabel, codesPour, codeLabel, matiere, formeLabel } from "../labels.js";
 import {
@@ -100,9 +100,15 @@ export async function mount(container, { labels }) {
     const fluxLabel = flux === "X" ? "exportateurs" : "importateurs";
 
     // Toutes les années × pays (alimente carte + classement + évolution).
+    //
+    // Lu sur le PRÉ-AGRÉGAT et non sur le détail bilatéral : cette requête ne
+    // demande que le partenaire World sur 26 années, ce qui obligeait sinon à
+    // ouvrir 26 partitions pour n'en retenir qu'une fraction infime des lignes.
+    // Le pré-agrégat porte déjà le filtre partnerCode = '0' et un reporterISO3
+    // non nul, d'où leur disparition ici.
     const rows = await query(`
-      SELECT period, reporterISO3, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcCritical(ANNEES)}
-      WHERE ${filtre} AND flowCode = ${F} AND partnerCode = '0' AND reporterISO3 IS NOT NULL
+      SELECT period, reporterISO3, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcCriticalAgg()}
+      WHERE ${filtre} AND flowCode = ${F}
       GROUP BY period, reporterISO3`);
 
     const parAnnee = new Map(ANNEES.map((y) => [y, new Map()]));

@@ -461,26 +461,30 @@ export async function mount(container, { labels }) {
     // --------------------------------------------------------------- origine
     async function modeOrigine() {
       const portee = iso3 === MONDE ? null : iso3;
-      // Déclarations d'IMPORTATION : le partenaire est le pays d'origine.
-      const imp = await query(`
+      // Les trois requêtes sont indépendantes : les enchaîner en série ajoutait
+      // deux allers-retours d'attente pure avant le premier pixel affiché.
+      const [imp, miroir, parCode] = await Promise.all([
+        // Déclarations d'IMPORTATION : le partenaire est le pays d'origine.
+        query(`
         SELECT partnerISO3 AS origine, ${stadeSql} AS stade,
                SUM(primaryValue) valeur, SUM(netWgt) poids
         FROM ${SRC} WHERE ${base} AND flowCode = 'M'
         ${portee ? `AND reporterISO3 = ${sqlStr(portee)}` : ""}
-        GROUP BY 1, 2`);
-      // Miroir : ce que ces mêmes pays déclarent EXPORTER.
-      const miroir = await query(`
+        GROUP BY 1, 2`),
+        // Miroir : ce que ces mêmes pays déclarent EXPORTER.
+        query(`
         SELECT reporterISO3 AS origine, SUM(primaryValue) valeur, SUM(netWgt) poids
         FROM ${SRC} WHERE ${base} AND flowCode = 'X'
         ${portee ? `AND partnerISO3 = ${sqlStr(portee)}` : ""}
-        GROUP BY 1`);
-      // Détail par position HS6, pour dire quel produit précis vient d'où.
-      const parCode = await query(`
+        GROUP BY 1`),
+        // Détail par position HS6, pour dire quel produit précis vient d'où.
+        query(`
         SELECT partnerISO3 AS origine, cmdCode,
                SUM(primaryValue) valeur, SUM(netWgt) poids
         FROM ${SRC} WHERE ${base} AND flowCode = 'M'
         ${portee ? `AND reporterISO3 = ${sqlStr(portee)}` : ""}
-        GROUP BY 1, 2`);
+        GROUP BY 1, 2`),
+      ]);
 
       const parOrigine = new Map();
       const parStade = new Map();

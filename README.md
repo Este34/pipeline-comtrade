@@ -86,6 +86,8 @@ natif DuckDB. Résultat typique : ~4,2 Go de base → ~240 Mo de Parquet.
 - `data/parquet/aggregat/data.parquet` : lignes agrégées (partenaire *World* ou
   produit `TOTAL`), pour des dashboards macro instantanés
 - `data/parquet/reference/*.parquet` : reporters, hs_codes, flows, continents
+- `data/parquet/critical_agg/data.parquet` : pré-agrégat du jeu critique (voir
+  « Pourquoi un pré-agrégat »), produit par `clean_export.py --critical`
 
 Chaque ligne de détail est enrichie de `reporterISO3`, `reporterContinent`,
 `partnerISO3`, `partnerContinent` (ISO3 depuis les références Comtrade, continent
@@ -102,8 +104,13 @@ zinc, graphite, tungstène…), défini dans
 ```bash
 python scraper/fetch_all.py --critical     # extraction (tous pays, 2000-2025)
 python scraper/load_to_db.py --critical     # -> table trade_critical
-python clean/clean_export.py --critical      # -> data/parquet/critical/
+python clean/clean_export.py --critical      # -> data/parquet/critical/ + critical_agg/
 ```
+
+L'export produit deux jeux : le **détail bilatéral** partitionné par année, et un
+**pré-agrégat** (`critical_agg/data.parquet`, fichier unique) contenant une ligne
+par année, déclarant, code HS6 et flux, pour le partenaire *World*. Voir
+« Pourquoi un pré-agrégat » plus bas.
 
 ### Compléter le dataset sans tout re-télécharger
 
@@ -179,6 +186,39 @@ est ailleurs : reclasser ou retirer un code déjà extrait est immédiat, mais
 *ajouter* un minéral absent du jeu de données demande une extraction
 (`fetch_complement.py`), l'API étant payante. Un code ajouté à la config sans
 extraction apparaîtra dans le référentiel avec zéro flux.
+
+### Pourquoi un pré-agrégat, et non des requêtes à l'API
+
+La webapp **interroge déjà** ses données en SQL : DuckDB-WASM lit les Parquet par
+*range requests* HTTP, rien n'est chargé intégralement en mémoire. La lenteur
+observée sur certains graphes ne venait donc pas du « tout stocké », mais de
+requêtes qui lisaient beaucoup plus de données qu'elles n'en exploitaient.
+
+Passer à des appels directs à l'API Comtrade au moment de l'affichage aurait
+aggravé les choses : l'API est **payante**, sa latence mesurée est de **4 à 70 s
+par appel**, elle plafonne à 250 000 lignes par réponse, et un classement mondial
+demande tous les déclarants d'un coup. Surtout, cela supprimerait le
+fonctionnement hors-ligne, qui est la raison d'être de la Phase 3.
+
+Le levier était donc de **lire moins**, à résultat identique :
+
+- La vue « Minéraux critiques » trace une carte animée et une évolution sur
+  26 années à partir des seules lignes du partenaire *World*. Elle ouvrait pour
+  cela les 26 partitions du détail bilatéral. Le pré-agrégat `critical_agg/`
+  contient exactement ces lignes : **un aller-retour réseau au lieu de 26**.
+- Trois requêtes du jeu principal (séries de « Cartes & séries », évolution de
+  « Analyse par produit », série bilatérale) portaient sur `partnerCode = '0'` ou
+  `cmdCode = 'TOTAL'` en balayant les 26 partitions du détail — alors que ces
+  lignes sont, par définition, celles de `aggregat/`. Elles y ont été
+  rebasculées ; l'égalité des résultats a été vérifiée requête par requête.
+- Les requêtes indépendantes d'une même vue sont lancées **en parallèle**, et les
+  résultats sont **mémoïsés par SQL** dans `webapp/js/db.js` : revenir sur un
+  onglet ou rejouer une analyse identique ne relance plus rien.
+
+Un piège à connaître si vous rebasculez d'autres requêtes du détail vers
+l'agrégat : le détail porte l'année dans son **chemin de partition**, l'agrégat
+non. Une requête qui s'appuyait sur `srcDetail([an])` doit gagner un
+`period = <an>` explicite, sinon elle cumule silencieusement toute la période.
 
 ### Fiabilité du poids déclaré (`netWgt`)
 
@@ -307,6 +347,19 @@ réellement hors-ligne dès qu'une requête `read_parquet(...)` s'exécute. Le
 correctif (`custom_extension_repository` pointé vers une copie locale de
 l'extension) est documenté dans `webapp/vendor/duckdb-wasm/README.md`.
 
+### Cache de résultats et durée de vie d'une session
+
+`webapp/js/db.js` mémorise les résultats **par SQL exact**, et mémorise la
+*promesse* plutôt que la valeur : deux vues qui lancent la même requête en même
+temps partagent un seul aller-retour. Une requête en échec est retirée du cache,
+sinon une coupure réseau passagère se rejouerait à l'identique jusqu'à la fin de
+la session.
+
+Ce cache suppose que les Parquet **ne changent pas pendant une session**, ce qui
+est vrai pour un site statique dont les données sont republiées entre deux
+déploiements. Si vous ajoutez un jour un changement de source à chaud, appelez
+`viderCache()`.
+
 ### Développement : cache navigateur
 
 Le rechargement des modules ES peut être masqué par le cache du navigateur.
@@ -422,7 +475,7 @@ data/
 ├── raw/, raw_critical/   # Réponses brutes {reporterCode}_{year}.csv
 ├── checkpoints/           # progress*.json, failed*.json, reporters_cache.csv
 ├── comtrade.duckdb         # Base locale (trade_records + trade_critical)
-└── parquet/               # detail/, aggregat/, reference/, critical/
+└── parquet/               # detail/, aggregat/, reference/, critical/, critical_agg/
 ```
 
 `data/` et `.env` sont exclus de git (voir `.gitignore`) : aucune clé ni

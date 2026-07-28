@@ -37,17 +37,49 @@ export function initDB() {
   return _initPromise;
 }
 
+// Cache de résultats, clé = SQL exact.
+//
+// Les Parquet sont immuables pour la durée d'une session : deux fois le même SQL
+// donne deux fois le même résultat. Sans ce cache, revenir sur un onglet, corriger
+// un filtre puis l'annuler, ou relancer une analyse identique relançait un balayage
+// complet — le coût dominant étant la lecture réseau, pas le calcul.
+//
+// C'est la PROMESSE qui est mémorisée, pas seulement le résultat : deux vues qui
+// lancent la même requête en parallèle partagent ainsi un seul aller-retour au lieu
+// de deux.
+const _cache = new Map();
+const CACHE_MAX = 60; // entrées ; au-delà, éviction de la plus ancienne (FIFO)
+
+// Vide le cache. À appeler si la source de données change en cours de session.
+export function viderCache() {
+  _cache.clear();
+}
+
 // Exécute une requête SQL et renvoie un tableau d'objets JS.
 // DuckDB-WASM renvoie des BigInt pour les entiers 64 bits (COUNT, period…) :
 // on les reconvertit en Number pour l'affichage et Chart.js.
-export async function query(sql) {
-  const conn = await initDB();
-  const res = await conn.query(sql);
-  return res.toArray().map((row) => {
-    const obj = row.toJSON();
-    for (const k in obj) if (typeof obj[k] === "bigint") obj[k] = Number(obj[k]);
-    return obj;
-  });
+export function query(sql) {
+  const connu = _cache.get(sql);
+  if (connu) return connu;
+
+  const promesse = (async () => {
+    const conn = await initDB();
+    const res = await conn.query(sql);
+    return res.toArray().map((row) => {
+      const obj = row.toJSON();
+      for (const k in obj) if (typeof obj[k] === "bigint") obj[k] = Number(obj[k]);
+      return obj;
+    });
+  })();
+
+  // Une requête en échec ne doit pas rester en cache, sinon l'erreur est rejouée
+  // à l'identique jusqu'à la fin de la session, y compris après un incident
+  // réseau passager.
+  promesse.catch(() => _cache.delete(sql));
+
+  _cache.set(sql, promesse);
+  if (_cache.size > CACHE_MAX) _cache.delete(_cache.keys().next().value);
+  return promesse;
 }
 
 // --- Helpers de construction des sources Parquet ---
@@ -67,6 +99,13 @@ export function srcDetail(annees) {
 export function srcCritical(annees) {
   const urls = annees.map((y) => `'${PARQUET_BASE}critical/period=${y}/data.parquet'`);
   return `read_parquet([${urls.join(",")}])`;
+}
+
+// Pré-agrégat critique : fichier unique (partenaire World, une ligne par
+// année/pays/code/flux). À préférer dès qu'une vue balaye plusieurs années sans
+// avoir besoin du partenaire bilatéral — un aller-retour au lieu de vingt-six.
+export function srcCriticalAgg() {
+  return `read_parquet('${PARQUET_BASE}critical_agg/data.parquet')`;
 }
 
 // Échappe une valeur texte pour l'injecter dans une clause SQL.

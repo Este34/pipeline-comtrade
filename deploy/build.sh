@@ -46,6 +46,7 @@ REQUIS=(
   "webapp/vendor/duckdb-wasm/duckdb-eh.wasm"
   "webapp/vendor/duckdb-wasm/extensions/v1.1.1/wasm_eh/parquet.duckdb_extension.wasm"
   "webapp/data/parquet/aggregat/data.parquet"
+  "webapp/data/parquet/critical_agg/data.parquet"
   "webapp/data/parquet/reference/reporters.parquet"
   "webapp/data/reference/countries_fr.json"
   "webapp/data/reference/hs_chapters_fr.json"

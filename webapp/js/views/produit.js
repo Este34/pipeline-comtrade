@@ -1,6 +1,9 @@
 // Vue « Analyse par produit » : pour un chapitre HS, classement des pays
 // (exportateurs/importateurs) et évolution du commerce mondial.
-import { query, srcDetail, sqlStr } from "../db.js";
+// Les deux requêtes ci-dessous portent sur le partenaire World (partnerCode='0') :
+// elles lisent donc l'agrégat, un fichier unique, plutôt que de balayer les
+// 26 partitions annuelles du détail pour en écarter 99 % des lignes.
+import { query, srcAggregat, sqlStr } from "../db.js";
 import { fmtMetric, axisFmt, pct, downloadCsv } from "../format.js";
 import { chapitre, pays } from "../labels.js";
 import {
@@ -81,16 +84,24 @@ export async function mount(container, { labels }) {
     const fmt = axisFmt(mt);
     const disp = (v) => fmtMetric(v, mt);
 
-    const classement = await query(`
-      SELECT reporterISO3, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcDetail([an])}
-      WHERE cmdCode = ${C} AND flowCode = ${F} AND partnerCode = '0'
+    // Deux requêtes indépendantes, lancées ensemble : le classement d'une année
+    // et l'évolution mondiale sur la période.
+    //
+    // L'année du classement était portée par le chemin de partition du détail ;
+    // l'agrégat réunissant les 26 années dans un fichier unique, elle devient un
+    // prédicat explicite — sans quoi le classement cumulerait toute la période.
+    const [classement, evolution] = await Promise.all([
+      query(`
+      SELECT reporterISO3, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcAggregat()}
+      WHERE period = ${an} AND cmdCode = ${C} AND flowCode = ${F} AND partnerCode = '0'
         AND reporterISO3 IS NOT NULL
-      GROUP BY reporterISO3 ORDER BY ${mt} DESC NULLS LAST LIMIT 20`);
-
-    const evolution = await query(`
-      SELECT period, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcDetail(ANNEES)}
+      GROUP BY reporterISO3 ORDER BY ${mt} DESC NULLS LAST LIMIT 20`),
+      query(`
+      SELECT period, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcAggregat()}
       WHERE cmdCode = ${C} AND flowCode = ${F} AND partnerCode = '0'
-      GROUP BY period ORDER BY period`);
+      GROUP BY period ORDER BY period`),
+    ]);
+
     const evoMap = new Map(evolution.map((r) => [r.period, r[mt] || 0]));
 
     res.innerHTML = "";

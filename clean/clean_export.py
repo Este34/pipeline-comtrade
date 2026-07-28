@@ -178,6 +178,37 @@ def exporter_critical(con: duckdb.DuckDBPyConnection) -> None:
         )
 
 
+def exporter_critical_agg(con: duckdb.DuckDBPyConnection) -> None:
+    """Pré-agrégat du dataset critique : une mesure par (année, déclarant, code, flux).
+
+    La vue « Minéraux critiques » trace une carte animée et une évolution sur les
+    26 années : elle devait donc ouvrir les 26 partitions du détail bilatéral pour
+    n'en garder que les lignes du partenaire World, soit une infime fraction des
+    lignes lues. Ce fichier unique contient exactement ces lignes-là, ce qui ramène
+    la lecture à UN aller-retour réseau au lieu de vingt-six.
+
+    Le partenaire World est conservé tel qu'il est déclaré, sans le recalculer en
+    sommant les partenaires : les deux ne coïncident pas toujours dans Comtrade, et
+    substituer l'un à l'autre changerait silencieusement les totaux affichés.
+    """
+    config.PARQUET_CRITICAL_AGG_DIR.mkdir(parents=True, exist_ok=True)
+    cible = (config.PARQUET_CRITICAL_AGG_DIR / "data.parquet").as_posix()
+    con.execute(
+        f"""
+        COPY (
+            SELECT t.period, er.iso3 AS reporterISO3, er.continent AS reporterContinent,
+                   t.cmdCode, t.flowCode,
+                   SUM(t.primaryValue) AS primaryValue, SUM(t.netWgt) AS netWgt
+            FROM trade_critical t
+            LEFT JOIN enrich er ON er.code = t.reporterCode
+            WHERE t.partnerCode = '0' AND er.iso3 IS NOT NULL
+            GROUP BY 1, 2, 3, 4, 5
+        )
+        TO '{cible}' (FORMAT PARQUET, COMPRESSION ZSTD)
+        """
+    )
+
+
 def afficher_resume_critical(con: duckdb.DuckDBPyConnection) -> None:
     glob = (config.PARQUET_CRITICAL_DIR / "*" / "*.parquet").as_posix()
     total, source = (
@@ -194,6 +225,25 @@ def afficher_resume_critical(con: duckdb.DuckDBPyConnection) -> None:
     print(f"Cohérence           : {'OK' if total == source else 'ECART !'}")
     print(f"Minéraux distincts  : {nb_min}")
     print(f"Taille              : {taille_repertoire(config.PARQUET_CRITICAL_DIR) / 1024 / 1024:.1f} Mo")
+
+    agg = config.PARQUET_CRITICAL_AGG_DIR / "data.parquet"
+    if agg.exists():
+        n_agg = con.execute(f"SELECT COUNT(*) FROM read_parquet('{agg.as_posix()}')").fetchone()[0]
+        # Contrôle de cohérence : le pré-agrégat doit reproduire le total World du
+        # détail. Un écart signalerait un filtre ou une jointure fautive, et
+        # passerait autrement inaperçu jusqu'à l'affichage dans le navigateur.
+        ref = con.execute(
+            "SELECT COALESCE(SUM(primaryValue), 0) FROM trade_critical t "
+            "JOIN enrich er ON er.code = t.reporterCode "
+            "WHERE t.partnerCode = '0' AND er.iso3 IS NOT NULL"
+        ).fetchone()[0]
+        tot = con.execute(
+            f"SELECT COALESCE(SUM(primaryValue), 0) FROM read_parquet('{agg.as_posix()}')"
+        ).fetchone()[0]
+        ecart = abs(tot - ref) / ref if ref else 0
+        print(f"Pré-agrégat         : {n_agg:,} lignes, "
+              f"{agg.stat().st_size / 1024 / 1024:.1f} Mo "
+              f"({'OK' if ecart < 1e-9 else f'ECART {ecart:.2e} !'})")
 
 
 def main() -> None:
@@ -214,6 +264,7 @@ def main() -> None:
         if args.critical:
             enregistrer_mineraux(con)
             exporter_critical(con)
+            exporter_critical_agg(con)
             afficher_resume_critical(con)
         else:
             preparer_dossiers()
