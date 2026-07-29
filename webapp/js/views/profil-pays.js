@@ -54,29 +54,31 @@ export async function mount(container, { labels }) {
     const fmt = axisFmt(mt);
     const disp = (v) => fmtMetric(v, mt);
 
-    // KPIs (imports + exports totaux) depuis l'agrégat World/TOTAL.
-    const totaux = await query(`
+    // Les trois requêtes sont indépendantes : lancées ensemble, la vue attend la
+    // plus lente au lieu de la somme des trois.
+    const [totaux, partenaires, produits] = await Promise.all([
+      // KPIs (imports + exports totaux) depuis l'agrégat World/TOTAL.
+      query(`
       SELECT flowCode, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${AGG}
       WHERE reporterISO3 = ${R} AND period = ${an}
         AND partnerCode = '0' AND cmdCode = 'TOTAL'
-      GROUP BY flowCode`);
-    const totM = totaux.find((r) => r.flowCode === "M")?.[mt] || 0;
-    const totX = totaux.find((r) => r.flowCode === "X")?.[mt] || 0;
-    const balance = totX - totM;
-
-    // Top partenaires pour le flux choisi (cmd TOTAL, hors World).
-    const partenaires = await query(`
+      GROUP BY flowCode`),
+      // Top partenaires pour le flux choisi (cmd TOTAL, hors World).
+      query(`
       SELECT partnerISO3, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${DET}
       WHERE reporterISO3 = ${R} AND flowCode = ${sqlStr(fx)}
         AND cmdCode = 'TOTAL' AND partnerCode <> '0'
-      GROUP BY partnerISO3 ORDER BY ${mt} DESC NULLS LAST LIMIT 15`);
-
-    // Top produits (chapitres HS) pour le flux choisi (partenaire World).
-    const produits = await query(`
+      GROUP BY partnerISO3 ORDER BY ${mt} DESC NULLS LAST LIMIT 15`),
+      // Top produits (chapitres HS) pour le flux choisi (partenaire World).
+      query(`
       SELECT cmdCode, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${DET}
       WHERE reporterISO3 = ${R} AND flowCode = ${sqlStr(fx)}
         AND cmdCode <> 'TOTAL' AND partnerCode = '0'
-      GROUP BY cmdCode ORDER BY ${mt} DESC NULLS LAST LIMIT 15`);
+      GROUP BY cmdCode ORDER BY ${mt} DESC NULLS LAST LIMIT 15`),
+    ]);
+    const totM = totaux.find((r) => r.flowCode === "M")?.[mt] || 0;
+    const totX = totaux.find((r) => r.flowCode === "X")?.[mt] || 0;
+    const balance = totX - totM;
 
     const nomPays = pays(labels, iso3);
     const fluxLabel = fx === "M" ? "importations" : "exportations";

@@ -1,6 +1,6 @@
 // Vue « Analyse bilatérale » : flux entre deux pays (A déclarant ↔ B partenaire),
 // évolution 2000-2025 et principaux produits échangés.
-import { query, srcDetail, sqlStr } from "../db.js";
+import { query, srcAggregat, srcDetail, sqlStr } from "../db.js";
 import { fmtMetric, axisFmt, downloadCsv } from "../format.js";
 import { chapitre, pays } from "../labels.js";
 import {
@@ -56,18 +56,23 @@ export async function mount(container, { labels }) {
     const fmt = axisFmt(mt);
     const disp = (v) => fmtMetric(v, mt);
 
-    // Série temporelle M et X entre A et B (cmd TOTAL) sur toutes les années.
-    const serie = await query(`
-      SELECT period, flowCode, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcDetail(ANNEES)}
+    // Deux requêtes indépendantes, lancées ensemble :
+    //  - la série temporelle M/X entre A et B (cmd TOTAL, toutes années), lue sur
+    //    l'agrégat où figurent les lignes cmdCode='TOTAL' : un fichier unique, là
+    //    où le détail imposait d'ouvrir les 26 partitions annuelles ;
+    //  - les produits échangés pour l'année et le flux choisis, qui exigent le
+    //    couple bilatéral complet et restent donc sur le détail d'une seule année.
+    const [serie, produits] = await Promise.all([
+      query(`
+      SELECT period, flowCode, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcAggregat()}
       WHERE reporterISO3 = ${A} AND partnerISO3 = ${B} AND cmdCode = 'TOTAL'
-      GROUP BY period, flowCode ORDER BY period`);
-
-    // Produits échangés pour l'année + flux choisis.
-    const produits = await query(`
+      GROUP BY period, flowCode ORDER BY period`),
+      query(`
       SELECT cmdCode, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcDetail([an])}
       WHERE reporterISO3 = ${A} AND partnerISO3 = ${B}
         AND flowCode = ${sqlStr(fx)} AND cmdCode <> 'TOTAL'
-      GROUP BY cmdCode ORDER BY ${mt} DESC NULLS LAST LIMIT 15`);
+      GROUP BY cmdCode ORDER BY ${mt} DESC NULLS LAST LIMIT 15`),
+    ]);
 
     // Réorganise la série par année.
     const parAnnee = new Map(ANNEES.map((y) => [y, { M: 0, X: 0 }]));

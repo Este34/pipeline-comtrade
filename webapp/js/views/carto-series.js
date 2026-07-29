@@ -1,6 +1,6 @@
 // Vue « Cartes & séries » : carte interactive (curseur + Play) du commerce par
 // pays + comparateur d'évolution multi-pays.
-import { query, srcAggregat, srcDetail, sqlStr } from "../db.js";
+import { query, srcAggregat, sqlStr } from "../db.js";
 import { axisFmt, fmtMetric, downloadCsv } from "../format.js";
 import { pays } from "../labels.js";
 import {
@@ -99,7 +99,7 @@ export async function mount(container, { labels }) {
 
     const liste = sel.map(sqlStr).join(",");
     const rows = await query(`
-      SELECT period, reporterISO3, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcDetail(ANNEES)}
+      SELECT period, reporterISO3, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcAggregat()}
       WHERE reporterISO3 IN (${liste}) AND cmdCode = 'TOTAL'
         AND flowCode = ${sqlStr(flux)} AND partnerCode = '0'
       GROUP BY period, reporterISO3 ORDER BY period`);

@@ -1,0 +1,1494 @@
+{
+  "codes": {
+    "250410": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Graphite naturel en poudre ou en paillettes",
+      "mineral": "Graphite",
+      "stade": "extraction"
+    },
+    "250490": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Graphite naturel, autres formes",
+      "mineral": "Graphite",
+      "stade": "extraction"
+    },
+    "251910": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Carbonate de magnésium naturel (magnésite)",
+      "mineral": "Magnésium",
+      "stade": "extraction"
+    },
+    "251990": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Magnésie électrofondue ou calcinée, autres oxydes de magnésium",
+      "mineral": "Magnésium",
+      "stade": "raffinage"
+    },
+    "260200": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Minerais de manganèse et leurs concentrés",
+      "mineral": "Manganèse",
+      "stade": "extraction"
+    },
+    "260300": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Minerais de cuivre et leurs concentrés",
+      "mineral": "Cuivre",
+      "stade": "extraction"
+    },
+    "260400": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Minerais de nickel et leurs concentrés",
+      "mineral": "Nickel",
+      "stade": "extraction"
+    },
+    "260500": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Minerais de cobalt et leurs concentrés",
+      "mineral": "Cobalt",
+      "stade": "extraction"
+    },
+    "260600": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Minerais d'aluminium et leurs concentrés (bauxite)",
+      "mineral": "Aluminium",
+      "stade": "extraction"
+    },
+    "260800": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Minerais de zinc et leurs concentrés",
+      "mineral": "Zinc",
+      "stade": "extraction"
+    },
+    "261000": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Minerais de chrome et leurs concentrés (chromite)",
+      "mineral": "Chrome",
+      "stade": "extraction"
+    },
+    "261100": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Minerais de tungstène et leurs concentrés",
+      "mineral": "Tungstène",
+      "stade": "extraction"
+    },
+    "261310": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "concentre",
+      "labelFr": "Minerais de molybdène grillés et leurs concentrés",
+      "mineral": "Molybdène",
+      "stade": "extraction"
+    },
+    "261390": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Minerais de molybdène non grillés et leurs concentrés",
+      "mineral": "Molybdène",
+      "stade": "extraction"
+    },
+    "261400": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Minerais de titane et leurs concentrés (ilménite, rutile)",
+      "mineral": "Titane",
+      "stade": "extraction"
+    },
+    "261590": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Minerais de niobium, tantale et vanadium, et leurs concentrés",
+      "mineral": "Niobium, tantale, vanadium",
+      "stade": "extraction"
+    },
+    "261710": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "minerai",
+      "labelFr": "Minerais d'antimoine et leurs concentrés",
+      "mineral": "Antimoine",
+      "stade": "extraction"
+    },
+    "262050": {
+      "categorie": "Extraction — minerai & concentré",
+      "forme": "residu",
+      "labelFr": "Cendres et résidus contenant du vanadium (source secondaire)",
+      "mineral": "Vanadium",
+      "stade": "extraction"
+    },
+    "280461": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "raffinee",
+      "labelFr": "Silicium titrant au moins 99,99 % (qualité électronique)",
+      "mineral": "Silicium",
+      "stade": "raffinage"
+    },
+    "280469": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "raffinee",
+      "labelFr": "Silicium, autres teneurs (silicium métallurgique)",
+      "mineral": "Silicium",
+      "stade": "raffinage"
+    },
+    "280530": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Métaux de terres rares, scandium et yttrium",
+      "mineral": "Terres rares",
+      "stade": "raffinage"
+    },
+    "281122": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Dioxyde de silicium (silice)",
+      "mineral": "Silicium",
+      "stade": "raffinage"
+    },
+    "281610": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Hydroxyde et peroxyde de magnésium",
+      "mineral": "Magnésium",
+      "stade": "raffinage"
+    },
+    "281700": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Oxyde et peroxyde de zinc",
+      "mineral": "Zinc",
+      "stade": "raffinage"
+    },
+    "281820": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Oxyde d'aluminium (alumine), autre que le corindon artificiel",
+      "mineral": "Aluminium",
+      "stade": "raffinage"
+    },
+    "281830": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Hydroxyde d'aluminium",
+      "mineral": "Aluminium",
+      "stade": "raffinage"
+    },
+    "281910": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Trioxyde de chrome",
+      "mineral": "Chrome",
+      "stade": "raffinage"
+    },
+    "281990": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Autres oxydes et hydroxydes de chrome",
+      "mineral": "Chrome",
+      "stade": "raffinage"
+    },
+    "282010": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Dioxyde de manganèse",
+      "mineral": "Manganèse",
+      "stade": "raffinage"
+    },
+    "282090": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Autres oxydes de manganèse",
+      "mineral": "Manganèse",
+      "stade": "raffinage"
+    },
+    "282200": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Oxydes et hydroxydes de cobalt",
+      "mineral": "Cobalt",
+      "stade": "raffinage"
+    },
+    "282300": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Oxydes de titane",
+      "mineral": "Titane",
+      "stade": "raffinage"
+    },
+    "282520": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Oxyde et hydroxyde de lithium",
+      "mineral": "Lithium",
+      "stade": "raffinage"
+    },
+    "282530": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Oxydes et hydroxydes de vanadium",
+      "mineral": "Vanadium",
+      "stade": "raffinage"
+    },
+    "282540": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Oxydes et hydroxydes de nickel",
+      "mineral": "Nickel",
+      "stade": "raffinage"
+    },
+    "282550": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Oxydes et hydroxydes de cuivre",
+      "mineral": "Cuivre",
+      "stade": "raffinage"
+    },
+    "282560": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Oxydes de germanium et dioxyde de zirconium",
+      "mineral": "Gallium, germanium, indium",
+      "stade": "raffinage"
+    },
+    "282570": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Oxydes et hydroxydes de molybdène",
+      "mineral": "Molybdène",
+      "stade": "raffinage"
+    },
+    "282580": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "oxyde",
+      "labelFr": "Oxydes d'antimoine",
+      "mineral": "Antimoine",
+      "stade": "raffinage"
+    },
+    "282731": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Chlorure de magnésium",
+      "mineral": "Magnésium",
+      "stade": "raffinage"
+    },
+    "282734": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Chlorure de cobalt",
+      "mineral": "Cobalt",
+      "stade": "raffinage"
+    },
+    "282735": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Chlorure de nickel",
+      "mineral": "Nickel",
+      "stade": "raffinage"
+    },
+    "283323": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Sulfate de chrome",
+      "mineral": "Chrome",
+      "stade": "raffinage"
+    },
+    "283324": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Sulfate de nickel",
+      "mineral": "Nickel",
+      "stade": "raffinage"
+    },
+    "283325": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Sulfate de cuivre",
+      "mineral": "Cuivre",
+      "stade": "raffinage"
+    },
+    "283422": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Nitrates de bismuth",
+      "mineral": "Bismuth",
+      "stade": "raffinage"
+    },
+    "283691": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Carbonate de lithium",
+      "mineral": "Lithium",
+      "stade": "raffinage"
+    },
+    "283693": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Carbonate de bismuth",
+      "mineral": "Bismuth",
+      "stade": "raffinage"
+    },
+    "284170": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Molybdates",
+      "mineral": "Molybdène",
+      "stade": "raffinage"
+    },
+    "284180": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Tungstates (paratungstate d'ammonium notamment)",
+      "mineral": "Tungstène",
+      "stade": "raffinage"
+    },
+    "284530": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Lithium enrichi en lithium 6 et ses composés",
+      "mineral": "Lithium",
+      "stade": "raffinage"
+    },
+    "284610": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Composés du cérium",
+      "mineral": "Terres rares",
+      "stade": "raffinage"
+    },
+    "284690": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Autres composés des terres rares, d'yttrium ou de scandium",
+      "mineral": "Terres rares",
+      "stade": "raffinage"
+    },
+    "284920": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "sel",
+      "labelFr": "Carbure de silicium",
+      "mineral": "Silicium",
+      "stade": "raffinage"
+    },
+    "320611": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "pigment",
+      "labelFr": "Pigments à base de dioxyde de titane, 80 % ou plus de TiO₂",
+      "mineral": "Titane",
+      "stade": "transformation"
+    },
+    "320619": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "pigment",
+      "labelFr": "Autres pigments à base de dioxyde de titane",
+      "mineral": "Titane",
+      "stade": "transformation"
+    },
+    "360690": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferrocérium et autres alliages pyrophoriques",
+      "mineral": "Terres rares",
+      "stade": "transformation"
+    },
+    "380110": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "raffinee",
+      "labelFr": "Graphite artificiel",
+      "mineral": "Graphite",
+      "stade": "raffinage"
+    },
+    "380120": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "raffinee",
+      "labelFr": "Graphite colloïdal ou semi-colloïdal",
+      "mineral": "Graphite",
+      "stade": "raffinage"
+    },
+    "380190": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Préparations à base de graphite, pâtes et demi-produits",
+      "mineral": "Graphite",
+      "stade": "transformation"
+    },
+    "381511": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Catalyseurs supportés à base de nickel",
+      "mineral": "Nickel",
+      "stade": "fini"
+    },
+    "381519": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Autres catalyseurs supportés",
+      "mineral": "Nickel",
+      "stade": "fini"
+    },
+    "711011": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Platine sous forme brute ou en poudre",
+      "mineral": "Platine",
+      "stade": "raffinage"
+    },
+    "711019": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Platine sous formes mi-ouvrées",
+      "mineral": "Platine",
+      "stade": "transformation"
+    },
+    "711021": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Palladium sous forme brute ou en poudre",
+      "mineral": "Palladium",
+      "stade": "raffinage"
+    },
+    "711029": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Palladium sous formes mi-ouvrées",
+      "mineral": "Palladium",
+      "stade": "transformation"
+    },
+    "711031": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Rhodium sous forme brute ou en poudre",
+      "mineral": "Rhodium",
+      "stade": "raffinage"
+    },
+    "711039": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Rhodium sous formes mi-ouvrées",
+      "mineral": "Rhodium",
+      "stade": "transformation"
+    },
+    "711041": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Iridium, osmium et ruthénium sous forme brute ou en poudre",
+      "mineral": "Iridium, osmium, ruthénium",
+      "stade": "raffinage"
+    },
+    "711049": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Iridium, osmium et ruthénium sous formes mi-ouvrées",
+      "mineral": "Iridium, osmium, ruthénium",
+      "stade": "transformation"
+    },
+    "711292": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris de platine",
+      "mineral": "Platine",
+      "stade": "transformation"
+    },
+    "711510": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Catalyseurs en toiles et treillis de platine",
+      "mineral": "Platine",
+      "stade": "fini"
+    },
+    "720211": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-manganèse à plus de 2 % de carbone",
+      "mineral": "Manganèse",
+      "stade": "transformation"
+    },
+    "720219": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-manganèse, autres teneurs en carbone",
+      "mineral": "Manganèse",
+      "stade": "transformation"
+    },
+    "720221": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-silicium à plus de 55 % de silicium",
+      "mineral": "Silicium",
+      "stade": "transformation"
+    },
+    "720229": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-silicium, autres teneurs",
+      "mineral": "Silicium",
+      "stade": "transformation"
+    },
+    "720230": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-silico-manganèse",
+      "mineral": "Manganèse",
+      "stade": "transformation"
+    },
+    "720241": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-chrome à plus de 4 % de carbone",
+      "mineral": "Chrome",
+      "stade": "transformation"
+    },
+    "720249": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-chrome, autres teneurs en carbone",
+      "mineral": "Chrome",
+      "stade": "transformation"
+    },
+    "720250": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-silico-chrome",
+      "mineral": "Chrome",
+      "stade": "transformation"
+    },
+    "720270": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-molybdène",
+      "mineral": "Molybdène",
+      "stade": "transformation"
+    },
+    "720280": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-tungstène et ferro-silico-tungstène",
+      "mineral": "Tungstène",
+      "stade": "transformation"
+    },
+    "720291": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-titane et ferro-silico-titane",
+      "mineral": "Titane",
+      "stade": "transformation"
+    },
+    "720292": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-vanadium",
+      "mineral": "Vanadium",
+      "stade": "transformation"
+    },
+    "720293": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Ferro-niobium",
+      "mineral": "Niobium",
+      "stade": "transformation"
+    },
+    "740100": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Mattes de cuivre, cuivre de cément",
+      "mineral": "Cuivre",
+      "stade": "raffinage"
+    },
+    "740200": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Cuivre non affiné, anodes pour affinage électrolytique",
+      "mineral": "Cuivre",
+      "stade": "raffinage"
+    },
+    "740311": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Cathodes et sections de cathodes en cuivre affiné",
+      "mineral": "Cuivre",
+      "stade": "raffinage"
+    },
+    "740312": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Barres à fil (wire-bars) en cuivre affiné",
+      "mineral": "Cuivre",
+      "stade": "raffinage"
+    },
+    "740313": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Billettes en cuivre affiné",
+      "mineral": "Cuivre",
+      "stade": "raffinage"
+    },
+    "740319": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Cuivre affiné sous autres formes brutes",
+      "mineral": "Cuivre",
+      "stade": "raffinage"
+    },
+    "740321": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "alliage",
+      "labelFr": "Alliages cuivre-zinc (laiton) sous forme brute",
+      "mineral": "Cuivre",
+      "stade": "raffinage"
+    },
+    "740322": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "alliage",
+      "labelFr": "Alliages cuivre-étain (bronze) sous forme brute",
+      "mineral": "Cuivre",
+      "stade": "raffinage"
+    },
+    "740329": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "alliage",
+      "labelFr": "Autres alliages de cuivre sous forme brute",
+      "mineral": "Cuivre",
+      "stade": "raffinage"
+    },
+    "740400": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris de cuivre",
+      "mineral": "Cuivre",
+      "stade": "transformation"
+    },
+    "740500": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "alliage",
+      "labelFr": "Alliages mères de cuivre",
+      "mineral": "Cuivre",
+      "stade": "transformation"
+    },
+    "740710": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Barres et profilés en cuivre affiné",
+      "mineral": "Cuivre",
+      "stade": "transformation"
+    },
+    "740721": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Barres et profilés en alliages cuivre-zinc (laiton)",
+      "mineral": "Cuivre",
+      "stade": "transformation"
+    },
+    "740729": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Barres et profilés en autres alliages de cuivre",
+      "mineral": "Cuivre",
+      "stade": "transformation"
+    },
+    "740811": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Fils en cuivre affiné, plus grande dimension supérieure à 6 mm",
+      "mineral": "Cuivre",
+      "stade": "transformation"
+    },
+    "740819": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Autres fils en cuivre affiné",
+      "mineral": "Cuivre",
+      "stade": "transformation"
+    },
+    "740821": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Fils en alliages cuivre-zinc (laiton)",
+      "mineral": "Cuivre",
+      "stade": "transformation"
+    },
+    "740829": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Fils en autres alliages de cuivre",
+      "mineral": "Cuivre",
+      "stade": "transformation"
+    },
+    "741300": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Torons, câbles et tresses en cuivre, non isolés",
+      "mineral": "Cuivre",
+      "stade": "fini"
+    },
+    "750110": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Mattes de nickel",
+      "mineral": "Nickel",
+      "stade": "raffinage"
+    },
+    "750120": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Sinters d'oxydes de nickel et autres produits intermédiaires",
+      "mineral": "Nickel",
+      "stade": "raffinage"
+    },
+    "750210": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Nickel brut non allié",
+      "mineral": "Nickel",
+      "stade": "raffinage"
+    },
+    "750220": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "alliage",
+      "labelFr": "Alliages de nickel sous forme brute",
+      "mineral": "Nickel",
+      "stade": "raffinage"
+    },
+    "750300": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris de nickel",
+      "mineral": "Nickel",
+      "stade": "transformation"
+    },
+    "750400": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "poudre",
+      "labelFr": "Poudres et paillettes de nickel",
+      "mineral": "Nickel",
+      "stade": "transformation"
+    },
+    "750511": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Barres et profilés en nickel non allié",
+      "mineral": "Nickel",
+      "stade": "transformation"
+    },
+    "750512": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Barres et profilés en alliages de nickel",
+      "mineral": "Nickel",
+      "stade": "transformation"
+    },
+    "760110": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Aluminium brut non allié",
+      "mineral": "Aluminium",
+      "stade": "raffinage"
+    },
+    "760120": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "alliage",
+      "labelFr": "Alliages d'aluminium sous forme brute",
+      "mineral": "Aluminium",
+      "stade": "raffinage"
+    },
+    "760200": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris d'aluminium",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760310": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "poudre",
+      "labelFr": "Poudres d'aluminium à structure non lamellaire",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760320": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "poudre",
+      "labelFr": "Poudres d'aluminium à structure lamellaire, paillettes",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760410": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Barres et profilés en aluminium non allié",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760421": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Profilés creux en alliages d'aluminium",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760429": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Autres barres et profilés en alliages d'aluminium",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760511": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Fils en aluminium non allié, section supérieure à 7 mm",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760519": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Autres fils en aluminium non allié",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760521": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Fils en alliages d'aluminium, section supérieure à 7 mm",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760529": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Autres fils en alliages d'aluminium",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760611": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Tôles et bandes rectangulaires en aluminium non allié",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760612": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Tôles et bandes rectangulaires en alliages d'aluminium",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760691": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Autres tôles et bandes en aluminium non allié",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "760692": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Autres tôles et bandes en alliages d'aluminium",
+      "mineral": "Aluminium",
+      "stade": "transformation"
+    },
+    "761090": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Constructions et parties de constructions en aluminium",
+      "mineral": "Aluminium",
+      "stade": "fini"
+    },
+    "761100": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Réservoirs et cuves en aluminium de plus de 300 litres",
+      "mineral": "Aluminium",
+      "stade": "fini"
+    },
+    "761510": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Articles de ménage et d'économie domestique en aluminium",
+      "mineral": "Aluminium",
+      "stade": "fini"
+    },
+    "790111": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Zinc brut non allié titrant au moins 99,99 % de zinc",
+      "mineral": "Zinc",
+      "stade": "raffinage"
+    },
+    "790112": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Zinc brut non allié titrant moins de 99,99 % de zinc",
+      "mineral": "Zinc",
+      "stade": "raffinage"
+    },
+    "790120": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "alliage",
+      "labelFr": "Alliages de zinc sous forme brute",
+      "mineral": "Zinc",
+      "stade": "raffinage"
+    },
+    "790200": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris de zinc",
+      "mineral": "Zinc",
+      "stade": "transformation"
+    },
+    "790310": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "poudre",
+      "labelFr": "Poussières de zinc",
+      "mineral": "Zinc",
+      "stade": "transformation"
+    },
+    "790400": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Barres, profilés et fils en zinc",
+      "mineral": "Zinc",
+      "stade": "transformation"
+    },
+    "790500": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Tôles, feuilles et bandes en zinc",
+      "mineral": "Zinc",
+      "stade": "transformation"
+    },
+    "790700": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Ouvrages en zinc",
+      "mineral": "Zinc",
+      "stade": "fini"
+    },
+    "810110": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "poudre",
+      "labelFr": "Poudres de tungstène",
+      "mineral": "Tungstène",
+      "stade": "raffinage"
+    },
+    "810191": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Tungstène sous forme brute, y compris barres simplement frittées",
+      "mineral": "Tungstène",
+      "stade": "raffinage"
+    },
+    "810194": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Tungstène sous forme brute, y compris barres simplement frittées",
+      "mineral": "Tungstène",
+      "stade": "raffinage"
+    },
+    "810196": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Fils de tungstène",
+      "mineral": "Tungstène",
+      "stade": "transformation"
+    },
+    "810197": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris de tungstène",
+      "mineral": "Tungstène",
+      "stade": "transformation"
+    },
+    "810199": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Autres ouvrages en tungstène",
+      "mineral": "Tungstène",
+      "stade": "transformation"
+    },
+    "810210": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "poudre",
+      "labelFr": "Poudres de molybdène",
+      "mineral": "Molybdène",
+      "stade": "raffinage"
+    },
+    "810291": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Molybdène sous forme brute, y compris barres simplement frittées",
+      "mineral": "Molybdène",
+      "stade": "raffinage"
+    },
+    "810294": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Molybdène sous forme brute, y compris barres simplement frittées",
+      "mineral": "Molybdène",
+      "stade": "raffinage"
+    },
+    "810295": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Barres, profilés, tôles et feuilles de molybdène",
+      "mineral": "Molybdène",
+      "stade": "transformation"
+    },
+    "810296": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Fils de molybdène",
+      "mineral": "Molybdène",
+      "stade": "transformation"
+    },
+    "810297": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris de molybdène",
+      "mineral": "Molybdène",
+      "stade": "transformation"
+    },
+    "810299": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Autres ouvrages en molybdène",
+      "mineral": "Molybdène",
+      "stade": "transformation"
+    },
+    "810310": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Tantale sous forme brute et poudres",
+      "mineral": "Tantale",
+      "stade": "raffinage"
+    },
+    "810320": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Tantale sous forme brute et poudres",
+      "mineral": "Tantale",
+      "stade": "raffinage"
+    },
+    "810330": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris de tantale",
+      "mineral": "Tantale",
+      "stade": "transformation"
+    },
+    "810390": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Ouvrages en tantale",
+      "mineral": "Tantale",
+      "stade": "transformation"
+    },
+    "810391": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Creusets en tantale",
+      "mineral": "Tantale",
+      "stade": "transformation"
+    },
+    "810399": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Autres ouvrages en tantale",
+      "mineral": "Tantale",
+      "stade": "transformation"
+    },
+    "810411": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Magnésium brut titrant au moins 99,8 % de magnésium",
+      "mineral": "Magnésium",
+      "stade": "raffinage"
+    },
+    "810419": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Magnésium brut, autres teneurs",
+      "mineral": "Magnésium",
+      "stade": "raffinage"
+    },
+    "810420": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris de magnésium",
+      "mineral": "Magnésium",
+      "stade": "transformation"
+    },
+    "810430": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "poudre",
+      "labelFr": "Copeaux, tournures, granulés et poudres de magnésium",
+      "mineral": "Magnésium",
+      "stade": "transformation"
+    },
+    "810490": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Ouvrages en magnésium",
+      "mineral": "Magnésium",
+      "stade": "transformation"
+    },
+    "810510": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Mattes de cobalt et produits intermédiaires, cobalt brut, poudres",
+      "mineral": "Cobalt",
+      "stade": "raffinage"
+    },
+    "810520": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Mattes de cobalt et produits intermédiaires, cobalt brut, poudres",
+      "mineral": "Cobalt",
+      "stade": "raffinage"
+    },
+    "810530": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris de cobalt",
+      "mineral": "Cobalt",
+      "stade": "transformation"
+    },
+    "810590": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Ouvrages en cobalt",
+      "mineral": "Cobalt",
+      "stade": "transformation"
+    },
+    "810600": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Bismuth sous forme brute, déchets et ouvrages",
+      "mineral": "Bismuth",
+      "stade": "raffinage"
+    },
+    "810610": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Bismuth titrant au moins 99,99 % et ouvrages",
+      "mineral": "Bismuth",
+      "stade": "raffinage"
+    },
+    "810690": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Autres formes de bismuth et ouvrages",
+      "mineral": "Bismuth",
+      "stade": "transformation"
+    },
+    "810810": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Titane sous forme brute, poudres, déchets",
+      "mineral": "Titane",
+      "stade": "raffinage"
+    },
+    "810820": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Titane sous forme brute et poudres",
+      "mineral": "Titane",
+      "stade": "raffinage"
+    },
+    "810830": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris de titane",
+      "mineral": "Titane",
+      "stade": "transformation"
+    },
+    "810890": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Ouvrages en titane",
+      "mineral": "Titane",
+      "stade": "transformation"
+    },
+    "811010": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Antimoine sous forme brute et poudres",
+      "mineral": "Antimoine",
+      "stade": "raffinage"
+    },
+    "811020": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris d'antimoine",
+      "mineral": "Antimoine",
+      "stade": "transformation"
+    },
+    "811090": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Ouvrages en antimoine",
+      "mineral": "Antimoine",
+      "stade": "transformation"
+    },
+    "811100": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Manganèse brut, poudres, déchets et ouvrages",
+      "mineral": "Manganèse",
+      "stade": "raffinage"
+    },
+    "811211": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Béryllium sous forme brute et poudres",
+      "mineral": "Béryllium",
+      "stade": "raffinage"
+    },
+    "811212": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris de béryllium",
+      "mineral": "Béryllium",
+      "stade": "transformation"
+    },
+    "811213": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Ouvrages en béryllium",
+      "mineral": "Béryllium",
+      "stade": "transformation"
+    },
+    "811219": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Autres ouvrages en béryllium",
+      "mineral": "Béryllium",
+      "stade": "transformation"
+    },
+    "811221": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Chrome sous forme brute et poudres",
+      "mineral": "Chrome",
+      "stade": "raffinage"
+    },
+    "811222": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "dechet",
+      "labelFr": "Déchets et débris de chrome",
+      "mineral": "Chrome",
+      "stade": "transformation"
+    },
+    "811229": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Ouvrages en chrome",
+      "mineral": "Chrome",
+      "stade": "transformation"
+    },
+    "811230": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Germanium sous forme brute, poudres et ouvrages",
+      "mineral": "Gallium, germanium, indium",
+      "stade": "raffinage"
+    },
+    "811240": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Vanadium sous forme brute et poudres",
+      "mineral": "Vanadium",
+      "stade": "raffinage"
+    },
+    "811292": {
+      "categorie": "Raffinage — oxydes, sels & métal brut",
+      "forme": "metal_brut",
+      "labelFr": "Gallium, indium et métaux voisins sous forme brute, poudres, déchets",
+      "mineral": "Gallium, germanium, indium",
+      "stade": "raffinage"
+    },
+    "811299": {
+      "categorie": "Transformation — alliages & demi-produits",
+      "forme": "demi_produit",
+      "labelFr": "Ouvrages en gallium, indium et métaux voisins",
+      "mineral": "Gallium, germanium, indium",
+      "stade": "transformation"
+    },
+    "850171": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Générateurs photovoltaïques à courant continu, 50 W ou moins",
+      "mineral": "Silicium",
+      "stade": "fini"
+    },
+    "850511": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Aimants permanents en métal (néodyme-fer-bore dominant)",
+      "mineral": "Terres rares",
+      "stade": "fini"
+    },
+    "850519": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Autres aimants permanents",
+      "mineral": "Terres rares",
+      "stade": "fini"
+    },
+    "850610": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Piles au dioxyde de manganèse",
+      "mineral": "Manganèse",
+      "stade": "fini"
+    },
+    "850611": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Piles au dioxyde de manganèse (volume de 300 cm³ ou moins)",
+      "mineral": "Manganèse",
+      "stade": "fini"
+    },
+    "850650": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Piles au lithium",
+      "mineral": "Lithium",
+      "stade": "fini"
+    },
+    "850730": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Accumulateurs nickel-cadmium",
+      "mineral": "Nickel",
+      "stade": "fini"
+    },
+    "850750": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Accumulateurs nickel-hydrure métallique",
+      "mineral": "Nickel",
+      "stade": "fini"
+    },
+    "850760": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Accumulateurs lithium-ion",
+      "mineral": "Lithium",
+      "stade": "fini"
+    },
+    "853221": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Condensateurs fixes au tantale",
+      "mineral": "Tantale",
+      "stade": "fini"
+    },
+    "853921": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Lampes halogènes à filament de tungstène",
+      "mineral": "Tungstène",
+      "stade": "fini"
+    },
+    "853922": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Lampes à filament de 200 W ou moins",
+      "mineral": "Tungstène",
+      "stade": "fini"
+    },
+    "854141": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Cellules photovoltaïques non assemblées en modules",
+      "mineral": "Silicium",
+      "stade": "fini"
+    },
+    "854143": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Cellules photovoltaïques assemblées en modules ou panneaux",
+      "mineral": "Silicium",
+      "stade": "fini"
+    },
+    "854411": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Fils pour bobinages en cuivre",
+      "mineral": "Cuivre",
+      "stade": "fini"
+    },
+    "854442": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Conducteurs électriques isolés munis de connecteurs",
+      "mineral": "Cuivre",
+      "stade": "fini"
+    },
+    "854449": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Autres conducteurs électriques isolés, 1 000 V ou moins",
+      "mineral": "Cuivre",
+      "stade": "fini"
+    },
+    "854460": {
+      "categorie": "Produit fini",
+      "forme": "produit_fini",
+      "labelFr": "Conducteurs électriques isolés pour plus de 1 000 V",
+      "mineral": "Cuivre",
+      "stade": "fini"
+    }
+  },
+  "formes": {
+    "alliage": "Alliage",
+    "concentre": "Concentré",
+    "dechet": "Déchet & débris",
+    "demi_produit": "Demi-produit ouvré",
+    "metal_brut": "Métal brut (non ouvré)",
+    "minerai": "Minerai",
+    "oxyde": "Oxyde & hydroxyde",
+    "pigment": "Pigment",
+    "poudre": "Poudre",
+    "produit_fini": "Produit fini",
+    "raffinee": "Matière raffinée (non métallique)",
+    "residu": "Cendre & résidu",
+    "sel": "Sel & composé chimique"
+  },
+  "stades": [
+    {
+      "description": "Ce qui sort du sol : minerais, concentrés, résidus valorisés.",
+      "id": "extraction",
+      "label": "Extraction — minerai & concentré",
+      "ordre": 1
+    },
+    {
+      "description": "Chimie et métallurgie primaire : oxydes, sels, mattes, métal non ouvré.",
+      "id": "raffinage",
+      "label": "Raffinage — oxydes, sels & métal brut",
+      "ordre": 2
+    },
+    {
+      "description": "Métal ouvré : ferro-alliages, barres, tôles, fils, poudres, déchets.",
+      "id": "transformation",
+      "label": "Transformation — alliages & demi-produits",
+      "ordre": 3
+    },
+    {
+      "description": "Produits manufacturés embarquant le minéral, teneur non déclarée.",
+      "id": "fini",
+      "label": "Produit fini",
+      "ordre": 4
+    }
+  ]
+}

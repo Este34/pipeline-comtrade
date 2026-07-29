@@ -3,7 +3,7 @@ Génère les fichiers de traduction FR chargés directement par la webapp
 (sans DuckDB), dans webapp/data/reference/ :
   - countries_fr.json    : ISO3 -> nom de pays FR (via pycountry, locale FR)
   - hs_chapters_fr.json   : chapitre HS (01..97) -> intitulé FR (table curée WCO)
-  - minerals_fr.json       : code HS6 -> minéral FR (depuis config)
+  - materiaux_fr.json      : référentiel matières (stades, formes, codes HS6)
   - flows_fr.json           : code flux -> libellé FR
 
 Ces fichiers sont petits (quelques Ko) : la webapp les charge en JSON pur pour
@@ -147,16 +147,27 @@ def countries_fr() -> dict[str, str]:
     return result
 
 
-def ecrire_json(nom: str, donnees: dict) -> None:
+def ecrire_json(nom: str, donnees: dict, nb: int | None = None) -> None:
     chemin = WEBAPP_REFERENCE_DIR / nom
     with open(chemin, "w", encoding="utf-8") as f:
         json.dump(donnees, f, ensure_ascii=False, indent=2, sort_keys=True)
-    print(f"  {nom:<22} {len(donnees)} entrées")
+    print(f"  {nom:<22} {len(donnees) if nb is None else nb} entrées")
 
 
-def minerals_fr() -> dict:
-    """code HS6 -> {mineral, categorie} (depuis config, structure élargie)."""
-    return {code: dict(v) for code, v in config.CRITICAL_MINERALS_HS6.items()}
+def materiaux_fr() -> dict:
+    """Référentiel matières : stades, formes, et un enregistrement par code HS6.
+
+    Ce fichier est la SOURCE DE VÉRITÉ de la taxonomie côté webapp. Les colonnes
+    `mineral` / `categorie` figées dans les Parquet ne sont plus lues : la webapp
+    convertit une sélection (minéraux, stades, formes) en liste de codes HS6 et
+    filtre sur `cmdCode`. Reclasser un code ou renommer un stade se fait donc en
+    régénérant ce fichier de quelques Ko, sans toucher aux ~290 Mo de Parquet.
+    """
+    return {
+        "stades": config.STADES,
+        "formes": config.FORMES,
+        "codes": {code: dict(v) for code, v in config.CRITICAL_MINERALS_HS6.items()},
+    }
 
 
 def main() -> None:
@@ -164,7 +175,8 @@ def main() -> None:
     print("Génération des libellés FR (webapp/data/reference/) :")
     ecrire_json("countries_fr.json", countries_fr())
     ecrire_json("hs_chapters_fr.json", HS_CHAPITRES_FR)
-    ecrire_json("minerals_fr.json", minerals_fr())
+    mat = materiaux_fr()
+    ecrire_json("materiaux_fr.json", mat, nb=len(mat["codes"]))
     ecrire_json("flows_fr.json", {"M": "Importations", "X": "Exportations"})
 
 

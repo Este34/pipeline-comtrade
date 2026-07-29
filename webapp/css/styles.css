@@ -406,7 +406,22 @@ td[data-sume]::after{content:' %'}
 .legende-item{display:inline-flex;align-items:center;gap:6px}
 .legende-item i{width:12px;height:12px;border-radius:3px;display:inline-block}
 
+/* panier de matières : repliable, pour ne pas noyer la barre de filtres
+   principale sous trois listes à choix multiples */
+.panier{margin-top:14px;background:var(--card);border:1px solid var(--border);border-radius:10px;
+  box-shadow:var(--shadow-card);overflow:hidden}
+.panier>summary{cursor:pointer;padding:12px 16px;font-weight:700;font-size:14px;color:var(--dark);
+  list-style:none;display:flex;align-items:center;gap:8px}
+.panier>summary::-webkit-details-marker{display:none}
+.panier>summary::before{content:"▸";color:var(--muted);font-size:12px;transition:transform .15s ease}
+.panier[open]>summary::before{transform:rotate(90deg)}
+.panier>summary:hover{background:#f4f6fb}
+.panier>summary span{font-weight:400;color:var(--muted);font-size:13px}
+.panier .filterbar{box-shadow:none;border:0;border-top:1px solid var(--border);border-radius:0;margin:0}
+.panier .note{margin:0 16px 14px}
+
 @media(prefers-reduced-motion:reduce){
+  .panier>summary::before{transition:none}
   .skel::after{animation:none}
   .totop,.chip button,.tab,.search-trigger,.sankey-lien,.multi-opt{transition:none}
 }

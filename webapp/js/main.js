@@ -87,7 +87,11 @@ async function boot() {
       document.getElementById("kbdHint").textContent = "⌘K";
     }
 
-    await activer("flux");
+    // Une analyse partagée arrive avec son onglet dans le hash (#vue=flux&…) :
+    // l'ouvrir directement évite que le lien ne retombe sur la vue par défaut,
+    // qui rejouerait ses propres filtres avant d'être remplacée.
+    const vueHash = new URLSearchParams(location.hash.replace(/^#/, "")).get("vue");
+    await activer(VIEWS[vueHash] ? vueHash : "flux");
   } catch (e) {
     setStatus("Erreur d'initialisation : " + e.message, true);
     console.error(e);
