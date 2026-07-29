@@ -215,6 +215,19 @@ Le levier était donc de **lire moins**, à résultat identique :
   résultats sont **mémoïsés par SQL** dans `webapp/js/db.js` : revenir sur un
   onglet ou rejouer une analyse identique ne relance plus rien.
 
+Mesuré sur un jeu de test servi en local : la vue « Minéraux critiques »
+s'affiche complètement en **0,7 s** avec le pré-agrégat, contre **2,1 s** en
+repli sur les 26 partitions, à KPI identiques. L'écart est plus marqué sur les
+vraies données, dont le détail bilatéral compte deux ordres de grandeur de
+partenaires en plus.
+
+**Le pré-agrégat n'est pas obligatoire.** S'il manque — archive de données
+antérieure à son introduction — la vue retombe d'elle-même sur le détail et
+affiche un bandeau « mode dégradé » indiquant la commande à lancer. Le build
+avertit sans échouer. Ce choix est délibéré : exiger le fichier rendrait
+indéployable toute archive existante, pour un simple gain de vitesse, alors que
+l'absence ne casse rien.
+
 Un piège à connaître si vous rebasculez d'autres requêtes du détail vers
 l'agrégat : le détail porte l'année dans son **chemin de partition**, l'agrégat
 non. Une requête qui s'appuyait sur `srcDetail([an])` doit gagner un

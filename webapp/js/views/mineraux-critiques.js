@@ -6,7 +6,7 @@
 // Le périmètre produit vient du référentiel materiaux_fr.json et non des
 // colonnes `mineral` / `categorie` des Parquet, figées depuis l'export : la
 // sélection est convertie en liste de codes HS6 puis appliquée sur `cmdCode`.
-import { query, srcCriticalAgg, sqlStr, clauseCodes } from "../db.js";
+import { query, srcCritical, srcCriticalAgg, sqlStr, clauseCodes } from "../db.js";
 import { fmtMetric, axisFmt, pct, downloadCsv } from "../format.js";
 import { pays, stades, stadeLabel, codesPour, codeLabel, matiere, formeLabel } from "../labels.js";
 import {
@@ -105,11 +105,25 @@ export async function mount(container, { labels }) {
     // demande que le partenaire World sur 26 années, ce qui obligeait sinon à
     // ouvrir 26 partitions pour n'en retenir qu'une fraction infime des lignes.
     // Le pré-agrégat porte déjà le filtre partnerCode = '0' et un reporterISO3
-    // non nul, d'où leur disparition ici.
-    const rows = await query(`
-      SELECT period, reporterISO3, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${srcCriticalAgg()}
-      WHERE ${filtre} AND flowCode = ${F}
-      GROUP BY period, reporterISO3`);
+    // non nul, d'où leur disparition dans la première variante.
+    const requete = (src, filtreSup) => `
+      SELECT period, reporterISO3, SUM(primaryValue) valeur, SUM(netWgt) poids FROM ${src}
+      WHERE ${filtre} AND flowCode = ${F}${filtreSup}
+      GROUP BY period, reporterISO3`;
+
+    // Repli sur le détail si le pré-agrégat est absent — cas d'une archive de
+    // données antérieure à son introduction. Les deux chemins donnent le même
+    // résultat, le repli est seulement plus lent : la vue reste donc juste, et
+    // le dit, plutôt que de tomber en erreur.
+    let rows;
+    let degrade = false;
+    try {
+      rows = await query(requete(srcCriticalAgg(), ""));
+    } catch {
+      degrade = true;
+      rows = await query(requete(srcCritical(ANNEES),
+        " AND partnerCode = '0' AND reporterISO3 IS NOT NULL"));
+    }
 
     const parAnnee = new Map(ANNEES.map((y) => [y, new Map()]));
     for (const r of rows) parAnnee.get(r.period)?.set(r.reporterISO3, r[metric] || 0);
@@ -126,6 +140,16 @@ export async function mount(container, { labels }) {
     const evoMap = new Map(ANNEES.map((y) => [y, [...parAnnee.get(y).values()].reduce((s, v) => s + v, 0)]));
 
     res.innerHTML = "";
+
+    // Un repli silencieux laisserait croire que l'optimisation est active alors
+    // qu'elle ne l'est pas : on le dit, et on dit quoi faire.
+    if (degrade) {
+      res.insertAdjacentHTML("beforeend", `<div class="note">
+        <b>Mode dégradé</b> : le pré-agrégat <code>critical_agg/</code> est absent de ce jeu de
+        données, la vue lit donc le détail bilatéral sur 26 années. Les résultats sont les mêmes,
+        l'affichage est seulement plus lent. Pour le rétablir :
+        <code>python clean/clean_export.py --critical</code>, puis republier l'archive de données.</div>`);
+    }
 
     const kpiWrap = document.createElement("div");
     kpiWrap.innerHTML = kpisHTML(

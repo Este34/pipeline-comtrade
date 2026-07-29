@@ -46,7 +46,6 @@ REQUIS=(
   "webapp/vendor/duckdb-wasm/duckdb-eh.wasm"
   "webapp/vendor/duckdb-wasm/extensions/v1.1.1/wasm_eh/parquet.duckdb_extension.wasm"
   "webapp/data/parquet/aggregat/data.parquet"
-  "webapp/data/parquet/critical_agg/data.parquet"
   "webapp/data/parquet/reference/reporters.parquet"
   "webapp/data/reference/countries_fr.json"
   "webapp/data/reference/hs_chapters_fr.json"
@@ -68,6 +67,17 @@ for fichier in "${REQUIS[@]}"; do
     exit 1
   fi
 done
+
+# Le pré-agrégat n'est PAS bloquant, à la différence des fichiers ci-dessus : son
+# absence ne casse rien, la webapp retombe sur le détail bilatéral et affiche
+# elle-même un avertissement. L'exiger ici rendrait indéployable toute archive
+# antérieure à son introduction, pour un simple gain de performance.
+if [ ! -s "webapp/data/parquet/critical_agg/data.parquet" ]; then
+  echo "AVERTISSEMENT : critical_agg/data.parquet absent de l'archive." >&2
+  echo "La vue « Minéraux critiques » fonctionnera en mode dégradé (lecture des" >&2
+  echo "26 partitions annuelles). Pour le produire : python clean/clean_export.py" >&2
+  echo "--critical, puis republier l'archive de données." >&2
+fi
 
 NB_PARQUET=$(find webapp/data/parquet -name '*.parquet' | wc -l)
 echo "OK : ${NB_PARQUET} fichiers Parquet et le moteur DuckDB-WASM sont en place."
