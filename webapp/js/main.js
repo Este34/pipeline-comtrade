@@ -5,6 +5,7 @@ import { loadLabels } from "./labels.js";
 import { setStatus, wireBackToTop } from "./ui.js";
 import { mountPalette } from "./palette.js";
 import { purgerCartes } from "./map.js";
+import { wireThemeToggle } from "./theme.js";
 
 import * as profil from "./views/profil-pays.js";
 import * as bilateral from "./views/bilateral.js";
@@ -12,8 +13,10 @@ import * as produit from "./views/produit.js";
 import * as carto from "./views/carto-series.js";
 import * as mineraux from "./views/mineraux-critiques.js";
 import * as flux from "./views/flux-sankey.js";
+import * as matrice from "./views/matrice.js";
+import * as europe from "./views/europe.js";
 
-const VIEWS = { profil, bilateral, produit, carto, mineraux, flux };
+const VIEWS = { profil, bilateral, produit, carto, mineraux, flux, matrice, europe };
 const monte = {}; // vues déjà montées (montage unique)
 
 let ctx = null;
@@ -73,13 +76,20 @@ async function ouvrirPaysDansProfil(iso3) {
 }
 
 async function boot() {
+  // Les commandes qui ne dépendent d'aucune donnée sont câblées AVANT le
+  // chargement : thème, retour en haut, navigation par onglets. Placées après,
+  // elles disparaissaient avec la base — un jeu de données absent rendait alors
+  // le bouton de thème et le clavier inopérants, ce qui n'a aucune raison
+  // d'être lié.
+  wireThemeToggle(document.getElementById("themeBtn"));
+  wireBackToTop();
+  initTabs();
+
   try {
     setStatus("Chargement des libellés et de la base de données…");
     const [labels] = await Promise.all([loadLabels(), initDB()]);
     ctx = { labels };
     setStatus("Prêt. Sélectionnez vos filtres puis lancez l'analyse.");
-    initTabs();
-    wireBackToTop();
 
     const palette = mountPalette({ labels, onGoToView: activer, onOpenCountry: ouvrirPaysDansProfil });
     document.getElementById("paletteBtn").addEventListener("click", () => palette.open());
@@ -93,7 +103,23 @@ async function boot() {
     const vueHash = new URLSearchParams(location.hash.replace(/^#/, "")).get("vue");
     await activer(VIEWS[vueHash] ? vueHash : "flux");
   } catch (e) {
+    // Le cas de loin le plus fréquent est un jeu de données absent : le dépôt
+    // ne versionne ni les Parquet ni le binaire WebAssembly, tous deux fournis
+    // par l'archive de release. Le dire explicitement évite de chercher un bug
+    // là où il n'y a qu'un fichier manquant.
     setStatus("Erreur d'initialisation : " + e.message, true);
+    const hote = document.getElementById("view-flux");
+    if (hote && !hote.children.length) {
+      hote.innerHTML = `<div class="view-head">
+        <h2>Données indisponibles</h2>
+        <p class="view-lede">L'application n'a pas pu ouvrir sa base de données locale.</p>
+        <p class="view-meta">Le dépôt ne contient ni les fichiers Parquet
+        (<code>webapp/data/parquet/</code>) ni le binaire DuckDB-WebAssembly
+        (<code>webapp/vendor/duckdb-wasm/duckdb-eh.wasm</code>) : les deux proviennent de l'archive
+        de données publiée en release. Récupérez <code>webapp-assets.tar.gz</code> et décompressez-la
+        dans <code>webapp/</code>, ou rétablissez la jonction locale vers le dossier de données.
+        <br>Détail technique : <b>${e.message}</b></p></div>`;
+    }
     console.error(e);
   }
 }

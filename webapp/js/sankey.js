@@ -12,9 +12,15 @@
 
 const NS = "http://www.w3.org/2000/svg";
 
-// Repère interne fixe : le SVG est ensuite mis à l'échelle par viewBox, ce qui
-// le rend responsive sans écouteur de redimensionnement.
-const L = 1000;
+// Repère interne : le SVG est ensuite mis à l'échelle par viewBox, ce qui le
+// rend responsive sans écouteur de redimensionnement.
+//
+// Au-delà de quatre colonnes, le repère s'élargit. Avec cinq colonnes il reste
+// trois bandeaux intermédiaires à loger : à 1000 unités de large, les rubans
+// n'auraient plus que ~67 unités entre deux bandeaux et les courbes se
+// tasseraient au point de ne plus être suivables à l'œil.
+const L_ETROIT = 1000;
+const L_LARGE = 1200;
 const MARGE = 150;
 const BARRE = 12;
 const BANDE = 150;
@@ -24,7 +30,7 @@ const ECART = 10; // espace vertical entre deux nœuds d'une même colonne
 // fines collées aux marges (leurs étiquettes se posent à l'extérieur), les
 // intermédiaires des bandeaux répartis régulièrement dans l'espace restant.
 // Avec n = 3, la formule redonne exactement l'ancien placement centré.
-function geometrie(n) {
+function geometrie(n, L) {
   if (n < 2) return [{ x: MARGE, w: BARRE }];
   const debut = MARGE + BARRE;
   const fin = L - MARGE - BARRE;
@@ -112,7 +118,8 @@ export function sankey(host, { nodes, links }, { fmt, hauteur, entetes } = {}) {
   // Colonnes, dans l'ordre fourni par l'appelant : c'est lui qui porte le sens
   // métier (ordre de la chaîne de valeur, classement décroissant...).
   const nbCols = Math.max(2, ...nodes.map((n) => (n.col || 0) + 1));
-  const X = geometrie(nbCols);
+  const L = nbCols >= 5 ? L_LARGE : L_ETROIT;
+  const X = geometrie(nbCols, L);
   const cols = Array.from({ length: nbCols }, (_, c) =>
     nodes.filter((n) => n.col === c).map((n) => parId.get(n.id)).filter((n) => n.valeur > 0));
 

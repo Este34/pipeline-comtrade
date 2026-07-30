@@ -3,9 +3,15 @@
 // Les DONNÉES viennent toujours de DuckDB-WASM/Parquet (100% offline).
 // Leaflet est chargé en global (window.L) via vendor/leaflet/leaflet.js.
 import { esc } from "./format.js";
+import { rampeSequentielle, jeton, themeEffectif } from "./theme.js";
 
-const RAMP = ["#e3e3fd", "#b9c0f4", "#8f9de8", "#5f74d6", "#2f4ab8", "#000091"];
-const TILE_URL = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+// La rampe et le fond de carte suivent le thème : une choroplèthe en rampe
+// claire sur une page sombre redeviendrait illisible, et les tuiles claires
+// écraseraient les polygones.
+const TILE = {
+  clair: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+  sombre: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+};
 const TILE_ATTR = "© OpenStreetMap © CARTO";
 
 function isoOf(feature) {
@@ -34,6 +40,10 @@ export function interactiveMap(host, geojson, dataParAnnee, opts) {
   const { annees, labelFn, fmt, onClick } = opts;
   purgerCartes(); // récupère l'instance abandonnée par un précédent affichage
   host.innerHTML = "";
+
+  const RAMP = rampeSequentielle();
+  const SANS_DONNEE = jeton("--ramp-0", "#eef1f7");
+  const TRAIT = jeton("--surface", "#ffffff");
 
   // Échelle de couleur log globale (comparable d'une année à l'autre).
   let min = Infinity, max = 0;
@@ -64,7 +74,7 @@ export function interactiveMap(host, geojson, dataParAnnee, opts) {
   host.append(ctrl, mapDiv, legend);
 
   const map = L.map(mapDiv, { center: [25, 10], zoom: 2, worldCopyJump: true, attributionControl: true });
-  L.tileLayer(TILE_URL, { attribution: TILE_ATTR, subdomains: "abcd", maxZoom: 6 }).addTo(map);
+  L.tileLayer(TILE[themeEffectif()] || TILE.clair, { attribution: TILE_ATTR, subdomains: "abcd", maxZoom: 6 }).addTo(map);
 
   let annee = anneeMax;
   const valeursDe = (y) => dataParAnnee.get(y) || new Map();
@@ -72,13 +82,13 @@ export function interactiveMap(host, geojson, dataParAnnee, opts) {
   function styleFeature(feature) {
     const v = valeursDe(annee).get(isoOf(feature)) || 0;
     const b = bucket(v);
-    return { fillColor: b >= 0 ? RAMP[b] : "#eceef5", fillOpacity: 0.85, color: "#fff", weight: 0.4 };
+    return { fillColor: b >= 0 ? RAMP[b] : SANS_DONNEE, fillOpacity: 0.85, color: TRAIT, weight: 0.4 };
   }
 
   const layer = L.geoJSON(geojson, {
     style: styleFeature,
     onEachFeature: (feature, lyr) => {
-      lyr.on("mouseover", () => lyr.setStyle({ weight: 1.5, color: "#333" }));
+      lyr.on("mouseover", () => lyr.setStyle({ weight: 1.5, color: jeton("--ink", "#161616") }));
       lyr.on("mouseout", () => layer.resetStyle(lyr));
       if (onClick) lyr.on("click", () => onClick(isoOf(feature)));
     },

@@ -4,6 +4,8 @@ import { esc } from "./format.js";
 
 const VUES = [
   { key: "flux", label: "Flux" },
+  { key: "europe", label: "Europe" },
+  { key: "matrice", label: "Matrice pays × minéraux" },
   { key: "mineraux", label: "Minéraux critiques" },
   { key: "profil", label: "Profil pays" },
   { key: "bilateral", label: "Analyse bilatérale" },

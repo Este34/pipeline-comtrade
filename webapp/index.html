@@ -3,21 +3,35 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Commerce international · Données Comtrade</title>
+<title>Matières critiques · Analyse des flux Comtrade</title>
+<meta name="description" content="Analyse des échanges internationaux de matières premières critiques : chaîne de valeur, dépendances, matrice pays × minéraux et position de l'Union européenne. Données UN Comtrade." />
+<!-- Le thème est posé avant le premier rendu : appliqué par le CSS seul, un
+     retour au thème sombre provoquerait un éclair blanc au chargement. -->
+<script>
+  try {
+    var t = localStorage.getItem("comtrade:theme");
+    if (t === "clair") document.documentElement.setAttribute("data-theme", "light");
+    else if (t === "sombre") document.documentElement.setAttribute("data-theme", "dark");
+  } catch (e) { /* stockage refusé : on reste sur la préférence système */ }
+</script>
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
 <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 
+<a class="skip-link" href="#app">Aller au contenu principal</a>
+
 <!-- ================= BARRE DE CONTRÔLE (sticky, verre) ================= -->
 <div class="controlbar">
   <div class="controlbar-inner">
     <div class="brand">
-      <img src="assets/isec.svg" alt="Logo Isec" class="brand-logo">
-      <span>Commerce international</span>
+      <img src="assets/isec.svg" alt="" class="brand-logo">
+      <span>Matières critiques</span>
     </div>
     <nav id="tabs" class="pillnav" role="tablist" aria-label="Vues d'analyse">
       <button class="tab active" data-view="flux" role="tab" id="tab-flux" aria-selected="true" aria-controls="view-flux">Flux</button>
+      <button class="tab" data-view="europe" role="tab" id="tab-europe" aria-selected="false" aria-controls="view-europe" tabindex="-1">Europe</button>
+      <button class="tab" data-view="matrice" role="tab" id="tab-matrice" aria-selected="false" aria-controls="view-matrice" tabindex="-1">Matrice</button>
       <button class="tab" data-view="mineraux" role="tab" id="tab-mineraux" aria-selected="false" aria-controls="view-mineraux" tabindex="-1">Minéraux critiques</button>
       <button class="tab" data-view="profil" role="tab" id="tab-profil" aria-selected="false" aria-controls="view-profil" tabindex="-1">Profil pays</button>
       <button class="tab" data-view="bilateral" role="tab" id="tab-bilateral" aria-selected="false" aria-controls="view-bilateral" tabindex="-1">Analyse bilatérale</button>
@@ -25,15 +39,20 @@
       <button class="tab" data-view="carto" role="tab" id="tab-carto" aria-selected="false" aria-controls="view-carto" tabindex="-1">Cartes et séries</button>
     </nav>
     <button type="button" class="search-trigger" id="paletteBtn" aria-haspopup="dialog">
-      <span aria-hidden="true">&#9906;</span> Rechercher <span class="kbd" id="kbdHint">Ctrl K</span>
+      <span aria-hidden="true">&#9906;</span> <span>Rechercher</span> <span class="kbd" id="kbdHint">Ctrl K</span>
     </button>
+    <button type="button" class="theme-toggle" id="themeBtn">◐</button>
   </div>
 </div>
 
 <div id="status" role="status" aria-live="polite" aria-atomic="true">Initialisation de la base de données…</div>
 
-<main id="app" style="max-width:1320px;margin:0 auto;padding:14px 16px 24px">
+<h1 class="sr-only">Analyse des échanges internationaux de matières premières critiques</h1>
+
+<main id="app" tabindex="-1">
   <section class="page active" id="view-flux" role="tabpanel" aria-labelledby="tab-flux" tabindex="0"></section>
+  <section class="page" id="view-europe" role="tabpanel" aria-labelledby="tab-europe" tabindex="0"></section>
+  <section class="page" id="view-matrice" role="tabpanel" aria-labelledby="tab-matrice" tabindex="0"></section>
   <section class="page" id="view-mineraux" role="tabpanel" aria-labelledby="tab-mineraux" tabindex="0"></section>
   <section class="page" id="view-profil" role="tabpanel" aria-labelledby="tab-profil" tabindex="0"></section>
   <section class="page" id="view-bilateral" role="tabpanel" aria-labelledby="tab-bilateral" tabindex="0"></section>
@@ -44,8 +63,14 @@
 <footer class="cea-banner">
   <div class="cea-banner-inner">
     <img src="assets/isec.svg" alt="Logo Isec" class="cea-banner-logo">
-    <p class="cea-banner-text">Données issues de la base officielle UN Comtrade (Nations Unies).
-      Application d'analyse hors-ligne, sans transmission de données en ligne.</p>
+    <p class="cea-banner-text">
+      Données issues de la base officielle <b>UN Comtrade</b> (Nations Unies), déclarations
+      douanières bilatérales 2000-2025. Les valeurs sont exprimées en dollars courants et les poids
+      en poids net déclaré : ni l'un ni l'autre ne mesure la <b>teneur en métal</b> d'un produit.
+      Un écart entre deux déclarations miroir d'un même flux est normal et documenté dans chaque vue.
+      <br>Application d'analyse fonctionnant intégralement dans le navigateur : aucune donnée n'est
+      transmise en ligne.
+    </p>
   </div>
 </footer>
 

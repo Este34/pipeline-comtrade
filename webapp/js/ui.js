@@ -156,6 +156,30 @@ export function fluxOptions() {
   ];
 }
 
+// Sens de lecture d'un pays dans un flux bilatéral.
+//
+// Comtrade est déclaratif : le pays analysé est toujours le DÉCLARANT, et ce
+// choix ne fait que dire de quel côté de l'échange on le regarde. Les libellés
+// nomment l'action plutôt que le code de flux, « M » et « X » n'étant lisibles
+// que pour qui pratique déjà la nomenclature.
+export function sensOptions() {
+  return [
+    { value: "M", label: "Importateur (ce pays achète)" },
+    { value: "X", label: "Exportateur (ce pays vend)" },
+  ];
+}
+
+// En-tête d'une vue : ce qu'elle montre, et ce qu'il faut savoir pour la lire
+// sans se tromper. Un graphe de commerce extérieur sans cadrage se prête à des
+// contresens coûteux (valeur déclarée ≠ métal contenu, import ≠ consommation).
+export function viewHead({ titre, lede, meta }) {
+  return `<div class="view-head">
+    <h2>${esc(titre)}</h2>
+    <p class="view-lede">${lede}</p>
+    ${meta ? `<p class="view-meta">${meta}</p>` : ""}
+  </div>`;
+}
+
 // Bascule métrique Valeur (US$) / Poids (t). Rendue comme un <select> étiqueté.
 export function metricOptions() {
   return [
