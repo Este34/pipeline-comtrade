@@ -33,11 +33,12 @@ import {
   selectHTML, anneeOptions, metricOptions, ctrl, comboHTML, wireCombo, paysOptions,
   mineralOptions, stadeOptions, formeOptions, kpisHTML, renderTable, card, renderChips,
   skeletonKpis, champCodeHTML, normaliserCode, multiSelectHTML, wireMultiSelect,
-  sensOptions, viewHead,
+  sensOptions, viewHead, avertirPoidsMultiStades, noteCommerceNonProduction,
 } from "../ui.js";
 import { sankey } from "../sankey.js";
 import { barChart } from "../charts.js";
 import { paletteViz, paletteStades, jeton, onThemeChange } from "../theme.js";
+import { analyserPoids, noteQualitePoids, SQL_VALEUR_PESEE } from "../qualite.js";
 
 const AUTRES = "__autres__";
 const AUTRES_MIN = "__autres_min__";
@@ -189,8 +190,9 @@ export async function mount(container, { labels }) {
         Définissez un périmètre de matières et une année, puis faites défiler : chaque section
         répond à une question différente sur exactement les mêmes données.`,
       meta: `Source : déclarations bilatérales UN Comtrade, partenaire réel (jamais l'agrégat
-        « Monde »). <b>Rappel de lecture</b> : les douanes classent par produit, pas par teneur —
-        un tonnage de produit fini n'est pas un tonnage de métal contenu.`,
+        « Monde »). ${noteCommerceNonProduction()}
+        <br><b>Rappel de lecture</b> : les douanes classent par produit, pas par teneur — un tonnage
+        de produit fini n'est pas un tonnage de métal contenu.`,
     })}
 
     <div class="filterbar">
@@ -498,7 +500,9 @@ export async function mount(container, { labels }) {
   function afficher(hote, ctx, { kpis, titre, graphe, entetes, lignes, colonnes, fichier, legende, apres }) {
     hote.innerHTML = "";
     const kpiWrap = document.createElement("div");
-    kpiWrap.innerHTML = kpisHTML(kpis, 3);
+    kpiWrap.innerHTML = kpisHTML(kpis, 3) +
+      avertirPoidsMultiStades(ctx.metric, ctx.stadesPanier,
+        ctx.stadesPanier.map((s) => stadeLabel(labels, s)));
     hote.appendChild(kpiWrap);
 
     const cSankey = card(titre, "fx-sankey");
@@ -631,7 +635,7 @@ export async function mount(container, { labels }) {
     const [flux, miroir, parCode] = await Promise.all([
       query(`
         SELECT partnerISO3 AS partenaire, ${ctx.stadeSql} AS stade,
-               SUM(primaryValue) valeur, SUM(netWgt) poids
+               SUM(primaryValue) valeur, SUM(netWgt) poids, ${SQL_VALEUR_PESEE}
         FROM ${ctx.SRC} WHERE ${ctx.base} AND flowCode = ${sqlStr(sens)}
         ${portee ? `AND reporterISO3 = ${sqlStr(portee)}` : ""}
         GROUP BY 1, 2`),
@@ -649,7 +653,17 @@ export async function mount(container, { labels }) {
     ]);
 
     const parPartenaire = new Map();
-    for (const r of flux) cumul(parPartenaire, r.partenaire, r[ctx.metric] || 0);
+    const qualite = new Map();
+    for (const r of flux) {
+      cumul(parPartenaire, r.partenaire, r[ctx.metric] || 0);
+      const q = qualite.get(r.partenaire) || { cle: r.partenaire, valeur: 0, poids: 0, valeurPesee: 0 };
+      q.valeur += r.valeur || 0;
+      q.poids += r.poids || 0;
+      q.valeurPesee += r.valeurPesee || 0;
+      qualite.set(r.partenaire, q);
+    }
+    const noteQualite = noteQualitePoids(analyserPoids([...qualite.values()]),
+      { metric: ctx.metric, nomDe: ctx.nomPays });
     const classement = triDesc(parPartenaire).filter(([, v]) => v > 0);
     const total = classement.reduce((s, [, v]) => s + v, 0);
     const top3 = classement.slice(0, 3).reduce((s, [, v]) => s + v, 0);
@@ -666,7 +680,8 @@ export async function mount(container, { labels }) {
       { label: `Pays de ${motPartenaire} actifs`, value: String(classement.length) },
       { label: `Concentration (3 premières ${estImport ? "origines" : "destinations"})`, value: pct(top3, total),
         cls: total && top3 / total > 0.7 ? "neg" : "" },
-    ], 3);
+    ], 3) + avertirPoidsMultiStades(ctx.metric, ctx.stadesPanier,
+      ctx.stadesPanier.map((s) => stadeLabel(labels, s))) + noteQualite;
     hote.appendChild(kpiWrap);
 
     const top = classement.slice(0, 20);

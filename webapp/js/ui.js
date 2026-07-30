@@ -169,6 +169,44 @@ export function sensOptions() {
   ];
 }
 
+// Avertissement affiché quand un poids est sommé sur plusieurs stades.
+//
+// Additionner des poids BRUTS le long d'une chaîne de valeur ne mesure rien de
+// physique, pour deux raisons distinctes :
+//
+//  - la teneur varie d'un stade à l'autre. Un kilo de concentré de cuivre
+//    contient ~250 g de métal, un kilo de cathode ~1 000 g, un kilo de câble
+//    isolé ~300 à 600 g (le reste est de l'isolant). Sommer les trois surestime
+//    massivement les exportateurs de minerai face aux exportateurs de métal.
+//  - le même métal est recompté à chaque franchissement de frontière : minerai,
+//    puis cathode, puis fil, puis câble.
+//
+// C'est la raison pour laquelle les tableaux de bord de référence (RMIS du JRC,
+// World Mining Data, USGS) publient toujours une production PAR STADE et ne
+// totalisent jamais la chaîne. La comparaison n'est légitime qu'à stade fixé.
+export function avertirPoidsMultiStades(metric, stadesPanier, stadeLabels = []) {
+  if (metric !== "poids" || !stadesPanier || stadesPanier.length < 2) return "";
+  return `<div class="note note-alerte"><b>Poids additionnés sur ${stadesPanier.length} stades
+    ${stadeLabels.length ? `(${stadeLabels.join(", ")})` : ""} — classement à interpréter avec
+    précaution.</b> Les poids déclarés sont des poids <b>bruts de produit</b>, pas des tonnages de
+    métal contenu : un kilo de concentré ne vaut qu'environ un quart de kilo de métal, un kilo de
+    câble isolé entre un tiers et deux tiers. Additionner les stades surestime donc les exportateurs
+    de minerai et recompte le même métal à chaque étape de la chaîne. Pour un classement comparable
+    aux sources de référence, <b>ne cochez qu'un seul stade</b>, ou passez à la mesure « Valeur ».</div>`;
+}
+
+// Avertissement sur la nature même de la source.
+//
+// Confondre commerce déclaré et production extraite est le contresens le plus
+// coûteux sur ces données, et il est d'autant plus facile que les deux se
+// mesurent en tonnes et se rapportent aux mêmes pays.
+export function noteCommerceNonProduction() {
+  return `<b>Ces chiffres mesurent des ÉCHANGES, pas de la production.</b> Un pays qui extrait
+    beaucoup mais transforme sur place apparaît peu ; un pays de transit ou de réexportation
+    apparaît beaucoup. Les volumes ne sont donc pas comparables à ceux du JRC/RMIS, de World Mining
+    Data ou de l'USGS, qui publient de la production minière et métallurgique.`;
+}
+
 // En-tête d'une vue : ce qu'elle montre, et ce qu'il faut savoir pour la lire
 // sans se tromper. Un graphe de commerce extérieur sans cadrage se prête à des
 // contresens coûteux (valeur déclarée ≠ métal contenu, import ≠ consommation).

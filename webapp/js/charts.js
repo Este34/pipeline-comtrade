@@ -45,6 +45,12 @@ function optionsBase(fmt, { legende = false, empile = false, horizontal = false,
   return {
     responsive: true,
     maintainAspectRatio: false,
+    // Indispensable, et pas seulement cosmétique : `indexAxis` dit à Chart.js
+    // lequel des deux axes porte les CATÉGORIES. S'il est omis alors que les
+    // échelles sont décrites en horizontal, l'axe des pays reçoit le formateur
+    // de valeurs (il affiche « 0 t » pour les indices 0, 1, 2…) et l'axe des
+    // valeurs perd le sien (il affiche des kilogrammes bruts).
+    indexAxis: horizontal ? "y" : "x",
     animation: { duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 400 },
     interaction: { mode: "index", intersect: false },
     plugins: {

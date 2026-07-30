@@ -20,10 +20,11 @@ import { pays, codesPour, mineraux, stades } from "../labels.js";
 import {
   selectHTML, anneeOptions, fluxOptions, metricOptions, ctrl, kpisHTML, card,
   renderChips, skeletonKpis, mineralOptions, stadeOptions, multiSelectHTML,
-  wireMultiSelect, viewHead,
+  wireMultiSelect, viewHead, avertirPoidsMultiStades, noteCommerceNonProduction,
 } from "../ui.js";
 import { heatmap } from "../heatmap.js";
 import { estUE27 } from "../geo.js";
+import { analyserPoids, noteQualitePoids, SQL_VALEUR_PESEE } from "../qualite.js";
 
 const NORMALISATIONS = [
   { value: "absolu", label: "Valeur absolue" },
@@ -49,7 +50,8 @@ export async function mount(container, { labels }) {
       lede: `Une grille de balayage : chaque cellule croise un pays et un minéral. Elle sert à
         repérer une concentration, une spécialisation ou une absence — puis à aller la comprendre
         dans les autres vues.`,
-      meta: `Lecture : la couleur encode une grandeur sur une <b>échelle logarithmique</b>, sans quoi
+      meta: `${noteCommerceNonProduction()}
+        <br>Lecture : la couleur encode une grandeur sur une <b>échelle logarithmique</b>, sans quoi
         les premiers pays écraseraient toute la grille et 95 % des cellules tomberaient dans le même
         palier. Une cellule « – » signifie <b>aucun échange déclaré</b>, ce qui n'est pas la même
         chose qu'un échange nul.`,
@@ -175,7 +177,7 @@ export async function mount(container, { labels }) {
     // par minéral multiplierait les allers-retours sans rien gagner.
     const tousCodes = [...new Set([...parMin.values()].flat())];
     const requete = (src, sup) => `
-      SELECT reporterISO3, cmdCode, SUM(primaryValue) valeur, SUM(netWgt) poids
+      SELECT reporterISO3, cmdCode, SUM(primaryValue) valeur, SUM(netWgt) poids, ${SQL_VALEUR_PESEE}
       FROM ${src}
       WHERE ${clauseCodes(tousCodes)} AND flowCode = '${flux}' AND period = ${annee}${sup}
       GROUP BY 1, 2`;
@@ -210,10 +212,19 @@ export async function mount(container, { labels }) {
     const parPays = new Map();
     const parMineral = new Map();
     const cle = (p, m) => `${p}\u0001${m}`;
+    const qualite = new Map();
     for (const r of rows) {
       const iso = r.reporterISO3;
       if (!iso) continue;
       if (perimetre === "ue27" && !estUE27(iso)) continue;
+      // Suivi qualité fait AVANT le filtre sur la mesure : une ligne dont le
+      // poids est nul est précisément celle qui intéresse le calcul de
+      // couverture, et l'écarter ici la rendrait invisible.
+      const q = qualite.get(iso) || { cle: iso, valeur: 0, poids: 0, valeurPesee: 0 };
+      q.valeur += r.valeur || 0;
+      q.poids += r.poids || 0;
+      q.valeurPesee += r.valeurPesee || 0;
+      qualite.set(iso, q);
       const v = r[metric] || 0;
       if (v <= 0) continue;
       for (const m of minerauxDuCode.get(r.cmdCode) || []) {
@@ -257,7 +268,10 @@ export async function mount(container, { labels }) {
       { label: "Pays actifs", value: String(parPays.size) },
       { label: "Concentration (5 premiers pays)", value: pct(top5, totalGlobal),
         cls: totalGlobal && top5 / totalGlobal > 0.7 ? "neg" : "" },
-    ], 3);
+    ], 3) + avertirPoidsMultiStades(metric, valeurs("stade"),
+      valeurs("stade").map((s) => stades(labels).find((x) => x.id === s)?.label || s)) +
+      noteQualitePoids(analyserPoids([...qualite.values()]),
+        { metric, nomDe: (iso) => pays(labels, iso) });
     res.appendChild(kpiWrap);
 
     // Normalisation : la valeur AFFICHÉE change, la valeur d'origine reste

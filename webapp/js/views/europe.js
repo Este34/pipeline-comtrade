@@ -21,7 +21,7 @@ import { pays, stades, stadeLabel, codesPour, mineraux } from "../labels.js";
 import {
   selectHTML, anneeOptions, metricOptions, ctrl, kpisHTML, renderTable, card,
   renderChips, skeletonKpis, mineralOptions, stadeOptions, multiSelectHTML,
-  wireMultiSelect, viewHead, ANNEES,
+  wireMultiSelect, viewHead, ANNEES, avertirPoidsMultiStades, noteCommerceNonProduction,
 } from "../ui.js";
 import { bulles } from "../bulles.js";
 import { barChart, stackedBarChart, stackedBar100 } from "../charts.js";
@@ -30,6 +30,7 @@ import {
   centroides, CADRES, projeter, couronne,
 } from "../geo.js";
 import { paletteStades, jeton, onThemeChange } from "../theme.js";
+import { analyserPoids, noteQualitePoids, SQL_VALEUR_PESEE } from "../qualite.js";
 
 const SECTIONS = [
   {
@@ -68,7 +69,8 @@ export async function mount(container, { labels }) {
       lede: `Un minéral, trois échelles emboîtées : le marché mondial, la position de l'Union face à
         l'extérieur, puis les échanges entre États membres. Les bulles donnent le poids de chaque
         pays, les flèches le sens et l'intensité des échanges.`,
-      meta: `Lecture des bulles : c'est la <b>surface</b> qui est proportionnelle au volume, pas le
+      meta: `${noteCommerceNonProduction()}
+        <br>Lecture des bulles : c'est la <b>surface</b> qui est proportionnelle au volume, pas le
         rayon. <b>Périmètre</b> : l'UE27 est le périmètre douanier et réglementaire (CRMA) ;
         l'« Europe géographique » y ajoute le Royaume-Uni, la Norvège, la Suisse, la Serbie, la
         Russie… — utile pour situer un voisinage, trompeur pour mesurer une dépendance de l'Union.`,
@@ -156,6 +158,8 @@ export async function mount(container, { labels }) {
     return {
       mineral, annee, metric, perimetre, codes, SRC, base, stadeSql, stadesPanier,
       couleurStade, C_IMPORT, C_EXPORT, C_PIVOT,
+      avertPoids: avertirPoidsMultiStades(metric, stadesPanier,
+        stadesPanier.map((s) => stadeLabel(labels, s))),
       dedans: (col, colCont) => clausePerimetre(perimetre, col, colCont, true),
       dehors: (col, colCont) => clausePerimetre(perimetre, col, colCont, false),
       libPerim: libellePerimetre(perimetre),
@@ -189,7 +193,7 @@ export async function mount(container, { labels }) {
     const [flux, serie] = await Promise.all([
       query(`
         SELECT reporterISO3 AS exp, partnerISO3 AS imp,
-               SUM(primaryValue) valeur, SUM(netWgt) poids
+               SUM(primaryValue) valeur, SUM(netWgt) poids, ${SQL_VALEUR_PESEE}
         FROM ${ctx.SRC} WHERE ${ctx.base} AND flowCode = 'X'
         GROUP BY 1, 2`),
       serieMondiale(ctx),
@@ -198,14 +202,25 @@ export async function mount(container, { labels }) {
     if (!flux.length) return vide(hote, `Aucun échange déclaré pour ${ctx.mineral} en ${ctx.annee}.`);
 
     const parPays = new Map();
+    // Valeur et poids sont suivis séparément, quelle que soit la mesure
+    // affichée : le contrôle de qualité a besoin des deux pour calculer une
+    // valeur unitaire, et c'est elle qui trahit une erreur d'unité.
+    const qualite = new Map();
     for (const r of flux) {
       const v = r[ctx.metric] || 0;
+      const q = qualite.get(r.exp) || { cle: r.exp, valeur: 0, poids: 0, valeurPesee: 0 };
+      q.valeur += r.valeur || 0;
+      q.poids += r.poids || 0;
+      q.valeurPesee += r.valeurPesee || 0;
+      qualite.set(r.exp, q);
       if (v <= 0) continue;
       parPays.set(r.exp, (parPays.get(r.exp) || 0) + v);
     }
     const classement = [...parPays.entries()].sort((a, b) => b[1] - a[1]);
     const total = classement.reduce((s, [, v]) => s + v, 0);
     const top5 = classement.slice(0, 5).reduce((s, [, v]) => s + v, 0);
+    const noteQualite = noteQualitePoids(analyserPoids([...qualite.values()]),
+      { metric: ctx.metric, nomDe: ctx.nomPays });
 
     hote.innerHTML = "";
     const kpiWrap = document.createElement("div");
@@ -214,7 +229,7 @@ export async function mount(container, { labels }) {
       { label: "Pays exportateurs actifs", value: String(classement.length) },
       { label: "Concentration (5 premiers exportateurs)", value: pct(top5, total),
         cls: total && top5 / total > 0.7 ? "neg" : "" },
-    ], 3);
+    ], 3) + ctx.avertPoids + noteQualite;
     hote.appendChild(kpiWrap);
 
     // Diagramme : les principaux exportateurs, à leur place géographique.
