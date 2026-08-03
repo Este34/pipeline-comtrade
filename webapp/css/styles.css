@@ -204,6 +204,9 @@ body{
   color:var(--ink);
   -webkit-font-smoothing:antialiased;
   transition:background var(--t-med) ease,color var(--t-med) ease;
+  /* Colonne pleine hauteur : le contenu (#app) prend l'espace restant et
+     pousse la bannière tout en bas de page, même quand une vue est courte. */
+  display:flex;flex-direction:column;min-height:100vh;
 }
 
 h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
@@ -232,8 +235,11 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
 }
 .skip-link:focus{top:0}
 
-#status,#app{max-width:1320px;margin-left:auto;margin-right:auto}
-#app{padding:14px 16px 24px}
+/* width:100% est requis depuis que `body` est un conteneur flex : une marge
+   horizontale `auto` désactive l'étirement du cross-axis, et l'élément se
+   dimensionnerait alors sur son contenu au lieu de suivre la fenêtre. */
+#status,#app{width:100%;max-width:1320px;margin-left:auto;margin-right:auto}
+#app{padding:14px 16px 24px;flex:1 0 auto}
 #app:focus{outline:none}
 #status{padding:10px 20px;font-size:var(--fs-sm);color:var(--ink-muted)}
 #status.err{color:var(--neg);font-weight:600}
@@ -248,7 +254,7 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
 
 .controlbar{
   position:sticky;top:12px;z-index:40;
-  max-width:1320px;margin:12px auto 0;padding:0 16px;
+  width:100%;max-width:1320px;margin:12px auto 0;padding:0 16px;
 }
 .controlbar-inner{
   display:flex;align-items:center;gap:6px;padding:6px;
@@ -265,7 +271,10 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
 }
 .brand-logo{height:22px;width:auto;flex:none}
 
-#tabs{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+/* min-width:0 est indispensable : sans lui, un élément flex refuse de passer
+   sous la largeur de son contenu, l'overflow-x ne s'active jamais et la liste
+   d'onglets pousse la recherche, le thème et l'emblème ONU hors de l'écran. */
+#tabs{display:flex;gap:2px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
 #tabs::-webkit-scrollbar{display:none}
 .tab{
   background:transparent;border:none;color:var(--ink-muted);
@@ -285,6 +294,9 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
 }
 .search-trigger{margin-left:auto;padding:8px 10px 8px 14px}
 .theme-toggle{width:38px;height:38px;justify-content:center;padding:0;font-size:15px}
+/* Emblème ONU : dernier élément de la barre, tout à droite. Il est repris en
+   pied de page, où l'attribution de la source est développée. */
+.controlbar-un{height:28px;width:auto;flex:none;margin-left:4px;margin-right:2px}
 .search-trigger:hover,.theme-toggle:hover{border-color:var(--accent);color:var(--accent)}
 .kbd{
   font-size:var(--fs-xs);font-weight:700;background:var(--surface);
@@ -687,14 +699,40 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
 .palette-item[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
 .palette-empty{padding:24px;text-align:center;color:var(--ink-muted);font-size:var(--fs-sm)}
 
-.cea-banner{background:var(--surface-2);border-top:1px solid var(--border);padding:32px 20px;margin-top:var(--gap-section)}
+/* Pied de page documentaire : logo, méthode de lecture et fiche du jeu de
+   données sur une ligne, puis une barre basse qui porte la mention légale et
+   l'attribution ONU — la source des données reste ainsi le dernier élément lu. */
+.cea-banner{background:var(--surface-2);border-top:1px solid var(--border);margin-top:var(--gap-section)}
 .cea-banner-inner{
-  max-width:900px;margin:0 auto;display:flex;flex-direction:column;
-  align-items:center;text-align:center;gap:16px;
+  max-width:1180px;margin:0 auto;padding:32px 20px 26px;
+  display:grid;grid-template-columns:auto 1fr auto;gap:38px;align-items:start;
 }
-.cea-banner-logo{height:52px;width:auto}
+.cea-banner-logo{height:46px;width:auto}
+.cea-banner-titre{
+  margin:0 0 8px;font-size:var(--fs-sm);font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted);
+}
 .cea-banner-text{margin:0;font-size:var(--fs-sm);line-height:1.65;color:var(--ink-2);max-width:70ch}
 .cea-banner-text a{color:var(--accent)}
+/* La fiche reste sur une colonne étroite : chaque champ tient sur sa ligne. */
+.cea-banner-fiche{margin:0;font-size:var(--fs-sm);line-height:1.9;color:var(--ink-2);white-space:nowrap}
+.cea-banner-fiche b{color:var(--ink)}
+
+.cea-banner-bas{border-top:1px solid var(--border);background:var(--plane)}
+.cea-banner-bas-inner{
+  max-width:1180px;margin:0 auto;padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;
+}
+.cea-banner-legal{margin:0;font-size:var(--fs-xs);color:var(--ink-muted)}
+.cea-banner-onu{display:flex;align-items:center;gap:12px}
+.cea-banner-onu span{font-size:var(--fs-xs);color:var(--ink-muted);line-height:1.4;text-align:right}
+.cea-banner-onu-logo{height:50px;width:auto;flex:none}
+
+/* En dessous de deux colonnes confortables, la grille se déplie en pile. */
+@media(max-width:900px){
+  .cea-banner-inner{grid-template-columns:1fr;gap:22px;justify-items:start}
+  .cea-banner-bas-inner{justify-content:flex-start}
+}
 
 /* Le mouvement décore ici, il ne porte aucune information : il peut donc
    disparaître entièrement sans rien coûter à la compréhension. */

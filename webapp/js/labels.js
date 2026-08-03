@@ -22,13 +22,16 @@ async function _load(nom) {
 
 // Charge toutes les tables de libellés en parallèle (au démarrage).
 export async function loadLabels() {
-  const [countries, chapters, materiaux, flows] = await Promise.all([
+  const [countries, chapters, materiaux, flows, dataset] = await Promise.all([
     _load("countries_fr"),
     _load("hs_chapters_fr"),
     _load("materiaux_fr"),
     _load("flows_fr"),
+    // Fiche du jeu de données (source, période, date de mise à jour). Absente
+    // des anciens déploiements : on retombe sur null sans casser le démarrage.
+    _load("dataset_fr").catch(() => null),
   ]);
-  return { countries, chapters, materiaux, flows };
+  return { countries, chapters, materiaux, flows, dataset };
 }
 
 // Nom FR d'un pays depuis son ISO3 (fallback : le code lui-même).

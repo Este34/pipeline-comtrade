@@ -75,6 +75,29 @@ async function ouvrirPaysDansProfil(iso3) {
   window.dispatchEvent(new CustomEvent("comtrade:open-country", { detail: { iso3 } }));
 }
 
+// Pied de page : source, période couverte et date de mise à jour du jeu de
+// données, lus depuis data/reference/dataset_fr.json. Sans manifeste (anciens
+// déploiements), on laisse le repli statique déjà présent dans le HTML.
+function afficherFicheDataset(dataset) {
+  const cible = document.getElementById("datasetMeta");
+  if (!cible || !dataset) return;
+
+  // Une ligne par champ : la fiche occupe une colonne étroite du pied de page.
+  const lignes = [];
+  if (dataset.source) lignes.push(`Source&nbsp;: <b>${dataset.source}</b>`);
+  if (dataset.periode && dataset.periode.debut && dataset.periode.fin) {
+    lignes.push(`Période&nbsp;: <b>${dataset.periode.debut}&nbsp;–&nbsp;${dataset.periode.fin}</b>`);
+  }
+  if (dataset.date_maj) {
+    const d = new Date(dataset.date_maj + "T00:00:00");
+    const jolie = Number.isNaN(d.getTime())
+      ? dataset.date_maj
+      : d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+    lignes.push(`Mise à jour&nbsp;: <b>${jolie}</b>`);
+  }
+  if (lignes.length) cible.innerHTML = lignes.join("<br>");
+}
+
 async function boot() {
   // Les commandes qui ne dépendent d'aucune donnée sont câblées AVANT le
   // chargement : thème, retour en haut, navigation par onglets. Placées après,
@@ -89,6 +112,7 @@ async function boot() {
     setStatus("Chargement des libellés et de la base de données…");
     const [labels] = await Promise.all([loadLabels(), initDB()]);
     ctx = { labels };
+    afficherFicheDataset(labels.dataset);
     setStatus("Prêt. Sélectionnez vos filtres puis lancez l'analyse.");
 
     const palette = mountPalette({ labels, onGoToView: activer, onOpenCountry: ouvrirPaysDansProfil });
