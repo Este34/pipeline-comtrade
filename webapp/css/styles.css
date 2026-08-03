@@ -204,6 +204,9 @@ body{
   color:var(--ink);
   -webkit-font-smoothing:antialiased;
   transition:background var(--t-med) ease,color var(--t-med) ease;
+  /* Colonne pleine hauteur : le contenu (#app) prend l'espace restant et
+     pousse la bannière tout en bas de page, même quand une vue est courte. */
+  display:flex;flex-direction:column;min-height:100vh;
 }
 
 h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
@@ -233,7 +236,7 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
 .skip-link:focus{top:0}
 
 #status,#app{max-width:1320px;margin-left:auto;margin-right:auto}
-#app{padding:14px 16px 24px}
+#app{padding:14px 16px 24px;flex:1 0 auto}
 #app:focus{outline:none}
 #status{padding:10px 20px;font-size:var(--fs-sm);color:var(--ink-muted)}
 #status.err{color:var(--neg);font-weight:600}
@@ -285,6 +288,8 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
 }
 .search-trigger{margin-left:auto;padding:8px 10px 8px 14px}
 .theme-toggle{width:38px;height:38px;justify-content:center;padding:0;font-size:15px}
+/* Emblème ONU : dernier élément de la barre, tout à droite. */
+.controlbar-un{height:28px;width:auto;flex:none;margin-left:4px;margin-right:2px}
 .search-trigger:hover,.theme-toggle:hover{border-color:var(--accent);color:var(--accent)}
 .kbd{
   font-size:var(--fs-xs);font-weight:700;background:var(--surface);
@@ -692,9 +697,7 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
   max-width:900px;margin:0 auto;display:flex;flex-direction:column;
   align-items:center;text-align:center;gap:16px;
 }
-.cea-banner-logos{display:flex;align-items:center;justify-content:center;gap:22px}
 .cea-banner-logo{height:52px;width:auto}
-.cea-banner-logo-un{height:56px}
 .cea-banner-body{display:flex;flex-direction:column;align-items:center;gap:10px}
 .cea-banner-text{margin:0;font-size:var(--fs-sm);line-height:1.65;color:var(--ink-2);max-width:70ch}
 .cea-banner-text a{color:var(--accent)}
