@@ -383,7 +383,7 @@ statique), le cache est au contraire souhaitable.
 ### Générer les libellés FR puis lancer en local
 
 ```bash
-python clean/labels_fr.py                    # webapp/data/reference/*.json (pays, chapitres, référentiel matières)
+python clean/labels_fr.py                    # webapp/data/reference/*.json (pays, chapitres, référentiel matières, fiche dataset)
 python -m http.server 8000                    # depuis la RACINE du dépôt
 # puis ouvrir http://localhost:8000/webapp/
 ```

@@ -62,15 +62,25 @@
 
 <footer class="cea-banner">
   <div class="cea-banner-inner">
-    <img src="assets/isec.svg" alt="Logo Isec" class="cea-banner-logo">
-    <p class="cea-banner-text">
-      Données issues de la base officielle <b>UN Comtrade</b> (Nations Unies), déclarations
-      douanières bilatérales 2000-2025. Les valeurs sont exprimées en dollars courants et les poids
-      en poids net déclaré : ni l'un ni l'autre ne mesure la <b>teneur en métal</b> d'un produit.
-      Un écart entre deux déclarations miroir d'un même flux est normal et documenté dans chaque vue.
-      <br>Application d'analyse fonctionnant intégralement dans le navigateur : aucune donnée n'est
-      transmise en ligne.
-    </p>
+    <div class="cea-banner-logos">
+      <img src="assets/isec.svg" alt="Logo Isec" class="cea-banner-logo">
+      <img src="assets/un-logo.svg" alt="Emblème des Nations unies" class="cea-banner-logo cea-banner-logo-un">
+    </div>
+    <div class="cea-banner-body">
+      <p class="cea-banner-text">
+        Données issues de la base officielle <b>UN Comtrade</b> (Nations unies), déclarations
+        douanières bilatérales 2000-2025. Les valeurs sont exprimées en dollars courants et les poids
+        en poids net déclaré : ni l'un ni l'autre ne mesure la <b>teneur en métal</b> d'un produit.
+        Un écart entre deux déclarations miroir d'un même flux est normal et documenté dans chaque vue.
+        <br>Application d'analyse fonctionnant intégralement dans le navigateur : aucune donnée n'est
+        transmise en ligne.
+      </p>
+      <!-- Renseigné par js/main.js depuis data/reference/dataset_fr.json ; le
+           texte statique reste un repli si le manifeste ou le script manquent. -->
+      <p class="cea-banner-meta" id="datasetMeta">
+        Source&nbsp;: <b>UN Comtrade</b> (Nations unies) · Période&nbsp;: 2000&nbsp;–&nbsp;2025
+      </p>
+    </div>
   </div>
 </footer>
 

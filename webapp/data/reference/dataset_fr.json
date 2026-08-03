@@ -1,0 +1,9 @@
+{
+  "source": "UN Comtrade",
+  "source_url": "https://comtradeplus.un.org",
+  "periode": {
+    "debut": 2000,
+    "fin": 2025
+  },
+  "date_maj": "2026-08-03"
+}

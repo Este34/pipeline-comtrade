@@ -13,6 +13,7 @@ afficher des libellés lisibles sans jointure DuckDB.
 import gettext
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 import pycountry
@@ -170,6 +171,19 @@ def materiaux_fr() -> dict:
     }
 
 
+def dataset_fr() -> dict:
+    """Fiche du jeu de données lue par la webapp pour afficher la source, la
+    période couverte et la date de mise à jour. Régénérée à chaque passage du
+    pipeline : `date_maj` porte donc le jour de la dernière extraction/export.
+    """
+    return {
+        "source": "UN Comtrade",
+        "source_url": "https://comtradeplus.un.org",
+        "periode": {"debut": config.ANNEE_DEBUT, "fin": config.ANNEE_FIN},
+        "date_maj": date.today().isoformat(),
+    }
+
+
 def main() -> None:
     WEBAPP_REFERENCE_DIR.mkdir(parents=True, exist_ok=True)
     print("Génération des libellés FR (webapp/data/reference/) :")
@@ -178,6 +192,7 @@ def main() -> None:
     mat = materiaux_fr()
     ecrire_json("materiaux_fr.json", mat, nb=len(mat["codes"]))
     ecrire_json("flows_fr.json", {"M": "Importations", "X": "Exportations"})
+    ecrire_json("dataset_fr.json", dataset_fr(), nb=1)
 
 
 if __name__ == "__main__":
