@@ -124,8 +124,10 @@ export function sankey(host, { nodes, links }, { fmt, hauteur, entetes } = {}) {
     nodes.filter((n) => n.col === c).map((n) => parId.get(n.id)).filter((n) => n.valeur > 0));
 
   // La hauteur suit la colonne la plus peuplée : sur un alluvial, ce n'est plus
-  // forcément une colonne d'extrémité.
-  const H = hauteur || Math.max(420, Math.max(...cols.map((c) => c.length)) * 30);
+  // forcément une colonne d'extrémité. On alloue assez de place par nœud pour
+  // qu'un maximum de bandeaux dépasse la hauteur d'une ligne de texte (15 px)
+  // et affiche donc son libellé, au lieu de l'empiler illisiblement.
+  const H = hauteur || Math.max(460, Math.max(...cols.map((c) => c.length)) * 36);
 
   // Une seule échelle pour toutes les colonnes, sinon l'épaisseur d'un même
   // ruban changerait entre son départ et son arrivée.
@@ -245,16 +247,26 @@ export function sankey(host, { nodes, links }, { fmt, hauteur, entetes } = {}) {
       // Un intitulé de position HS6 dépasse largement le bandeau : on le coupe
       // par mots, et on tronque au-delà de trois lignes — le libellé complet
       // reste accessible en infobulle.
-      const lignes = couperEnLignes(n.label, Math.max(8, Math.floor(g.w / 7)), 3);
-      lignes.forEach((ligne, i) => {
-        const txt = el("text", {
-          x: g.x + g.w / 2, y: milieu + (i - (lignes.length - 1) / 2) * 15 + 5,
-          "text-anchor": "middle", class: "sankey-txt-bande",
+      //
+      // On ne dessine QUE le nombre de lignes qui tient dans la hauteur du
+      // bandeau (15 px par ligne) : sans ce plafond, les libellés des nœuds
+      // fins se chevauchaient jusqu'à devenir illisibles. Un bandeau trop fin
+      // pour une seule ligne n'affiche rien — l'intitulé reste en infobulle.
+      const maxLignes = Math.min(3, Math.floor(n.h / 15));
+      if (maxLignes >= 1) {
+        const lignes = couperEnLignes(n.label, Math.max(8, Math.floor(g.w / 7)), maxLignes);
+        lignes.forEach((ligne, i) => {
+          const txt = el("text", {
+            x: g.x + g.w / 2, y: milieu + (i - (lignes.length - 1) / 2) * 15 + 5,
+            "text-anchor": "middle", class: "sankey-txt-bande",
+          });
+          txt.textContent = ligne;
+          gNoeuds.appendChild(txt);
         });
-        txt.textContent = ligne;
-        gNoeuds.appendChild(txt);
-      });
-    } else {
+      }
+    } else if (n.h >= 11) {
+      // Idem pour les colonnes d'extrémité : sous la hauteur d'une ligne, deux
+      // étiquettes voisines se superposeraient. L'infobulle garde le détail.
       const aGauche = n.col === 0;
       const txt = el("text", {
         x: aGauche ? g.x - 8 : g.x + g.w + 8,
