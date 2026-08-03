@@ -82,19 +82,20 @@ function afficherFicheDataset(dataset) {
   const cible = document.getElementById("datasetMeta");
   if (!cible || !dataset) return;
 
-  const parties = [];
-  if (dataset.source) parties.push(`Source&nbsp;: <b>${dataset.source}</b> (Nations unies)`);
+  // Une ligne par champ : la fiche occupe une colonne étroite du pied de page.
+  const lignes = [];
+  if (dataset.source) lignes.push(`Source&nbsp;: <b>${dataset.source}</b>`);
   if (dataset.periode && dataset.periode.debut && dataset.periode.fin) {
-    parties.push(`Période&nbsp;: ${dataset.periode.debut}&nbsp;–&nbsp;${dataset.periode.fin}`);
+    lignes.push(`Période&nbsp;: <b>${dataset.periode.debut}&nbsp;–&nbsp;${dataset.periode.fin}</b>`);
   }
   if (dataset.date_maj) {
     const d = new Date(dataset.date_maj + "T00:00:00");
     const jolie = Number.isNaN(d.getTime())
       ? dataset.date_maj
       : d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-    parties.push(`Données à jour au ${jolie}`);
+    lignes.push(`Mise à jour&nbsp;: <b>${jolie}</b>`);
   }
-  if (parties.length) cible.innerHTML = parties.join(" · ");
+  if (lignes.length) cible.innerHTML = lignes.join("<br>");
 }
 
 async function boot() {

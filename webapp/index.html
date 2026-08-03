@@ -65,20 +65,34 @@
 <footer class="cea-banner">
   <div class="cea-banner-inner">
     <img src="assets/isec.svg" alt="Logo Isec" class="cea-banner-logo">
-    <div class="cea-banner-body">
+    <div class="cea-banner-col">
+      <h2 class="cea-banner-titre">Lecture des données</h2>
       <p class="cea-banner-text">
-        Données issues de la base officielle <b>UN Comtrade</b> (Nations unies), déclarations
-        douanières bilatérales 2000-2025. Les valeurs sont exprimées en dollars courants et les poids
-        en poids net déclaré : ni l'un ni l'autre ne mesure la <b>teneur en métal</b> d'un produit.
-        Un écart entre deux déclarations miroir d'un même flux est normal et documenté dans chaque vue.
-        <br>Application d'analyse fonctionnant intégralement dans le navigateur : aucune donnée n'est
-        transmise en ligne.
+        Déclarations douanières bilatérales de la base officielle <b>UN Comtrade</b> (Nations unies).
+        Les valeurs sont exprimées en dollars courants et les poids en poids net déclaré : ni l'un ni
+        l'autre ne mesure la <b>teneur en métal</b> d'un produit. Un écart entre deux déclarations
+        miroir d'un même flux est normal, et documenté dans chaque vue.
       </p>
+    </div>
+    <div class="cea-banner-col">
+      <h2 class="cea-banner-titre">Jeu de données</h2>
       <!-- Renseigné par js/main.js depuis data/reference/dataset_fr.json ; le
            texte statique reste un repli si le manifeste ou le script manquent. -->
-      <p class="cea-banner-meta" id="datasetMeta">
-        Source&nbsp;: <b>UN Comtrade</b> (Nations unies) · Période&nbsp;: 2000&nbsp;–&nbsp;2025
+      <p class="cea-banner-fiche" id="datasetMeta">
+        Source&nbsp;: <b>UN Comtrade</b><br>Période&nbsp;: <b>2000&nbsp;–&nbsp;2025</b>
       </p>
+    </div>
+  </div>
+  <div class="cea-banner-bas">
+    <div class="cea-banner-bas-inner">
+      <p class="cea-banner-legal">
+        Application d'analyse fonctionnant intégralement dans le navigateur — aucune donnée n'est
+        transmise en ligne.
+      </p>
+      <div class="cea-banner-onu">
+        <span>Données de la base officielle<br>des Nations unies</span>
+        <img src="assets/un-logo.png" alt="Emblème des Nations unies" class="cea-banner-onu-logo">
+      </div>
     </div>
   </div>
 </footer>
