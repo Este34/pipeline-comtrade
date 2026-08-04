@@ -50,9 +50,16 @@ const MASQUE_H = 1024;
 const R_BULLE_MIN = 0.018;
 const R_BULLE_MAX = 0.075;
 
-/** Rayon des arcs à l'origine, et part restante à la pointe. */
+/**
+ * Rayon des arcs à l'origine, et part restante à la pointe.
+ *
+ * Bornes en fraction du rayon des bulles plutôt qu'en absolu : sur un cadre
+ * européen les bulles rétrécissent, et des arcs restés à leur taille mondiale
+ * les recouvriraient.
+ */
 const R_ARC_MIN = 0.004;
 const R_ARC_MAX = 0.02;
+const PART_ARC = 0.6;
 const EFFILEMENT = 0.16;
 
 /** Tangage maximal, en radians (~75°) : au-delà on regarde un pôle de face. */
@@ -192,10 +199,24 @@ function slerp(THREE, a, b, t) {
  * d'un arc, c'est le rayon terrestre. Aucun transport parallèle à calculer, et
  * le ruban ne vrille jamais.
  */
-function tubeEffile(THREE, a, b, rayonDepart) {
+function tubeEffile(THREE, a, b, rayonDepart, margeDepart = 0, margeArrivee = 0, degagement = 0) {
   const SEGMENTS = 56;
   const COTES = 8;
   const angle = a.angleTo(b);
+  /*
+   * L'arc démarre au BORD des bulles, pas à leur centre.
+   *
+   * Sur la sphère unité, la distance parcourue vaut l'angle : une marge
+   * exprimée en rayon de bulle s'y convertit directement. Sans ce retrait, un
+   * flux entre deux pays voisins — l'Allemagne et la Tchéquie — était plus
+   * court que les deux bulles qu'il relie, et disparaissait entièrement sous
+   * elles. Le diagramme applique la même règle en unités de dessin.
+   *
+   * Les marges sont plafonnées à 35 % de la longueur : sur un trajet très
+   * court, mieux vaut un arc écrasé qu'un arc inversé.
+   */
+  const t0 = angle > 1e-4 ? Math.min(0.35, margeDepart / angle) : 0;
+  const t1 = angle > 1e-4 ? 1 - Math.min(0.35, margeArrivee / angle) : 1;
   /*
    * La hauteur suit la distance : un arc court qui monterait autant qu'un arc
    * long ferait une bosse absurde au-dessus de deux pays voisins.
@@ -206,21 +227,42 @@ function tubeEffile(THREE, a, b, rayonDepart) {
    * lisaient comme des orbites plutôt que comme des échanges. À 0,18 au plus,
    * ils épousent le globe.
    */
-  const hauteur = Math.min(0.18, 0.03 + angle * 0.06);
+  //
+  // Elle a aussi un PLANCHER, lié à la taille des bulles reliées. Un flux entre
+  // deux pays voisins est court, donc bas : il restait enfoui dans les deux
+  // sphères qu'il joignait, et les échanges intra-européens ne se voyaient pas
+  // du tout. L'arc doit passer au-dessus des bulles, pas entre elles.
+  const hauteur = Math.min(0.24, Math.max(0.03 + angle * 0.06, degagement * 2.4));
   const rFin = Math.max(R_ARC_MIN * 0.6, rayonDepart * EFFILEMENT);
 
   const positions = [];
   const ts = [];
   const index = [];
 
-  const surArc = (t) => slerp(THREE, a, b, t)
-    .multiplyScalar(RAYON + hauteur * Math.sin(Math.PI * t));
+  // `u` court sur le tube dessiné (0 à 1), `t` sur le grand cercle complet :
+  // le dégradé et l'impulsion restent ainsi calés sur les extrémités visibles.
+  const versT = (u) => t0 + (t1 - t0) * u;
+  const surArc = (u) => {
+    const t = versT(u);
+    return slerp(THREE, a, b, t).multiplyScalar(RAYON + hauteur * Math.sin(Math.PI * t));
+  };
 
   for (let i = 0; i <= SEGMENTS; i++) {
     const t = i / SEGMENTS;
     const centre = surArc(t);
-    const suivant = surArc(Math.min(1, t + 1 / SEGMENTS));
-    const tangente = suivant.clone().sub(centre).normalize();
+    /*
+     * La tangente est prise vers l'AVANT, sauf au dernier anneau où elle est
+     * prise vers l'arrière.
+     *
+     * Écrire `surArc(min(1, t + pas))` paraissait prudent : au dernier anneau,
+     * il renvoie le point lui-même, la différence est nulle, et `normalize()`
+     * d'un vecteur nul donne des NaN. Trois sommets NaN suffisent à rendre la
+     * sphère englobante invalide, et three écarte alors le tube entier au test
+     * du champ de vision — l'arc disparaît sans la moindre erreur.
+     */
+    const avant = i < SEGMENTS ? surArc(t + 1 / SEGMENTS) : centre;
+    const arriere = i < SEGMENTS ? centre : surArc(t - 1 / SEGMENTS);
+    const tangente = (i < SEGMENTS ? avant.clone().sub(arriere) : centre.clone().sub(arriere)).normalize();
     const radial = centre.clone().normalize();
     const binormal = new THREE.Vector3().crossVectors(tangente, radial).normalize();
     const normal = new THREE.Vector3().crossVectors(binormal, tangente).normalize();
@@ -255,6 +297,56 @@ function tubeEffile(THREE, a, b, rayonDepart) {
   geo.setAttribute("aT", new THREE.Float32BufferAttribute(ts, 1));
   geo.setIndex(index);
   return geo;
+}
+
+/** Vecteur unité d'un couple (lon, lat), sans dépendre de three. */
+function unite(lon, lat) {
+  const phi = (lat * Math.PI) / 180;
+  const lam = (lon * Math.PI) / 180;
+  return [Math.cos(phi) * Math.sin(lam), Math.sin(phi), Math.cos(phi) * Math.cos(lam)];
+}
+
+/**
+ * Distance de caméra ajustée à l'étendue des données.
+ *
+ * À distance fixe, le globe montre toujours un hémisphère : onze États membres
+ * n'y occupaient qu'un dixième du disque et leurs échanges devenaient
+ * illisibles. On recule donc juste ce qu'il faut pour que le pays le plus
+ * éloigné du centre tombe aux trois quarts du rayon de l'image.
+ *
+ * La géométrie : un point à l'angle θ du centre de vue se projette à
+ * sin(θ)/(D − cos(θ)) en unités de tangente, et le demi-champ vaut tan(19°).
+ * D'où D = cos(θ) + sin(θ) / (0,75 × tan(19°)).
+ *
+ * Le résultat est borné. En deçà de 2,4 la perspective devient si rasante que
+ * la sphère ne se lit plus comme telle ; au-delà de 4,4 on s'éloigne sans rien
+ * gagner (voir DISTANCE_CAMERA).
+ */
+function cadrer(noeuds, centre) {
+  const c = unite(centre.lon, centre.lat);
+  let thetaMax = 0;
+  for (const n of noeuds) {
+    const p = unite(n.lon, n.lat);
+    const cos = Math.min(1, Math.max(-1, p[0] * c[0] + p[1] * c[1] + p[2] * c[2]));
+    thetaMax = Math.max(thetaMax, Math.acos(cos));
+  }
+  // Une marge : sans elle, les bulles du bord touchent le cadre.
+  const theta = Math.min(Math.PI / 2.2, thetaMax * 1.25);
+  const cible = 0.75 * Math.tan((CHAMP / 2) * (Math.PI / 180));
+  const distance = Math.min(
+    DISTANCE_CAMERA,
+    Math.max(2.4, Math.cos(theta) + Math.sin(theta) / cible),
+  );
+  return {
+    distance,
+    /*
+     * L'atmosphère n'est montrée que si elle tient dans le champ. À courte
+     * distance, la demi-hauteur visible au centre (tan(19°) × D) descend sous
+     * son rayon de 1,22 : elle se ferait trancher et rendrait au globe la
+     * silhouette octogonale qu'on avait justement corrigée.
+     */
+    montrerAtmosphere: Math.tan((CHAMP / 2) * (Math.PI / 180)) * distance > RAYON_ATMOSPHERE,
+  };
 }
 
 /** Barycentre des nœuds pondéré par le volume, en degrés. Voir `centre`. */
@@ -320,7 +412,8 @@ export async function globe(hote, { noeuds, liens }, opts) {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(CHAMP, 1, 0.1, 100);
-  camera.position.set(0, 0, DISTANCE_CAMERA);
+  const cadrage = cadrer(actifs, centre);
+  camera.position.set(0, 0, cadrage.distance);
 
   let rendu;
   try {
@@ -333,7 +426,20 @@ export async function globe(hote, { noeuds, liens }, opts) {
 
   const boite = document.createElement("div");
   boite.className = "globe-box";
-  boite.appendChild(rendu.domElement);
+  /*
+   * Une scène intermédiaire, exactement à la taille du canevas.
+   *
+   * Le canevas est carré et centré dans une boîte qui ne l'est pas toujours
+   * (`max-height` la rabote sur un écran bas). Les étiquettes, calculées dans le
+   * repère du canevas, se retrouvaient alors décalées de tout l'écart de
+   * centrage — sur un cadre européen, une colonne de codes ISO3 flottait à
+   * deux cents pixels à gauche des bulles. Elles vivent désormais dans un
+   * conteneur qui a rigoureusement les dimensions du rendu.
+   */
+  const scene2d = document.createElement("div");
+  scene2d.className = "globe-scene";
+  boite.appendChild(scene2d);
+  scene2d.appendChild(rendu.domElement);
   rendu.domElement.className = "globe-toile";
   rendu.domElement.setAttribute("role", "img");
   rendu.domElement.setAttribute("tabindex", "0");
@@ -344,12 +450,12 @@ export async function globe(hote, { noeuds, liens }, opts) {
   const couche = document.createElement("div");
   couche.className = "globe-etiquettes";
   couche.setAttribute("aria-hidden", "true");
-  boite.appendChild(couche);
+  scene2d.appendChild(couche);
 
   const infobulle = document.createElement("div");
   infobulle.className = "globe-infobulle";
   infobulle.setAttribute("aria-hidden", "true");
-  boite.appendChild(infobulle);
+  scene2d.appendChild(infobulle);
 
   /*
    * Deux groupes emboîtés : le parent porte le tangage, l'enfant le lacet.
@@ -439,10 +545,12 @@ export async function globe(hote, { noeuds, liens }, opts) {
         uCouleur: { value: couleurs.terres },
         uTaille: { value: 2.1 },
         uHauteur: { value: 600 },
+        uDistance: { value: cadrage.distance },
       },
       vertexShader: `
         uniform float uTaille;
         uniform float uHauteur;
+        uniform float uDistance;
         varying float vFace;
         void main() {
           vec4 vueur = modelViewMatrix * vec4(position, 1.0);
@@ -450,7 +558,10 @@ export async function globe(hote, { noeuds, liens }, opts) {
           // la sphere garde sa transparence sans z-fighting.
           vec3 n = normalize(normalMatrix * position);
           vFace = smoothstep(-0.3, 0.5, n.z);
-          gl_PointSize = uTaille * (uHauteur / 600.0) * (4.4 / -vueur.z);
+          // uDistance : la taille d'un point suit l'echelle a laquelle on
+          // regarde, sinon un globe zoome sur l'Europe garde un semis aussi
+          // clairsseme que la vue mondiale.
+          gl_PointSize = uTaille * (uHauteur / 600.0) * (uDistance / -vueur.z);
           gl_Position = projectionMatrix * vueur;
         }
       `,
@@ -548,7 +659,9 @@ export async function globe(hote, { noeuds, liens }, opts) {
         }
       `,
     });
-    pivot.add(new THREE.Mesh(geo, mat));
+    const maille = new THREE.Mesh(geo, mat);
+    maille.visible = cadrage.montrerAtmosphere;
+    pivot.add(maille);
     aJeter.push(geo, mat);
     matAtmo = mat;
   }
@@ -556,10 +669,33 @@ export async function globe(hote, { noeuds, liens }, opts) {
   // --- Bulles --------------------------------------------------------------
   const vmax = Math.max(...actifs.map((n) => n.valeur));
   const parId = new Map(actifs.map((n) => [n.id, n]));
+
+  /*
+   * La taille des bulles suit l'ÉCARTEMENT des pays, pas seulement le volume.
+   *
+   * Sur une sphère unité, la distance entre deux points vaut l'angle qui les
+   * sépare. Un rayon plus grand que la moitié de l'écart médian fait que toutes
+   * les bulles se recouvrent : sur un cadre européen, onze pays serrés
+   * devenaient une seule tache bleue qui avalait les arcs. Le diagramme a
+   * exactement le même garde-fou, mesuré en unités de dessin.
+   */
+  const positionsUnite = actifs.map((n) => versVecteur(THREE, n.lon, n.lat));
+  const ecarts = positionsUnite.map((a, i) => {
+    let mini = Infinity;
+    positionsUnite.forEach((b, j) => { if (i !== j) mini = Math.min(mini, a.angleTo(b)); });
+    return mini;
+  }).sort((u, v) => u - v);
+  const ecartMedian = ecarts.length > 1 ? ecarts[Math.floor(ecarts.length / 2)] : Infinity;
+  // 0,38 et non 0,5 : contrairement au diagramme, le globe n'écarte pas les
+  // bulles qui se recouvrent — elles restent à leur position vraie. Il faut
+  // donc leur laisser d'emblée la place des arcs, qui portent l'information
+  // principale et que des bulles jointives avalaient entièrement.
+  const rBulleMax = Math.max(R_BULLE_MIN * 1.2, Math.min(R_BULLE_MAX, ecartMedian * 0.38));
+
   for (const n of actifs) {
     // Rayon en racine de la valeur : c'est la SURFACE que l'œil compare, ici
     // comme sur le diagramme.
-    const r = R_BULLE_MIN + (R_BULLE_MAX - R_BULLE_MIN) * Math.sqrt(n.valeur / vmax);
+    const r = R_BULLE_MIN * 0.6 + (rBulleMax - R_BULLE_MIN * 0.6) * Math.sqrt(n.valeur / vmax);
     const geo = new THREE.SphereGeometry(r, 20, 16);
     const mat = new THREE.MeshBasicMaterial({
       color: new THREE.Color(n.couleur || jeton("--viz-1", "#2a78d6")),
@@ -574,23 +710,40 @@ export async function globe(hote, { noeuds, liens }, opts) {
   }
 
   // --- Arcs ----------------------------------------------------------------
+  // Rayon de chaque bulle, pour que les arcs partent de son bord. La marge est
+  // un peu plus large à l'arrivée : la pointe du tube doit rester visible.
+  const rayonDe = new Map(bulles.map((b) => [b.noeud.id, b.r]));
   const fmax = utiles.length ? Math.max(...utiles.map((l) => l.valeur)) : 1;
   const ordonnes = [...utiles].sort((a, b) => b.valeur - a.valeur);
   ordonnes.forEach((l, i) => {
     const na = parId.get(l.source);
     const nb = parId.get(l.target);
     if (!na || !nb) return;
-    const r0 = R_ARC_MIN + (R_ARC_MAX - R_ARC_MIN) * Math.sqrt(l.valeur / fmax);
+    const rArcMax = Math.min(R_ARC_MAX, Math.max(R_ARC_MIN * 1.5, rBulleMax * PART_ARC));
+    const r0 = R_ARC_MIN * 0.5 + (rArcMax - R_ARC_MIN * 0.5) * Math.sqrt(l.valeur / fmax);
     const geo = tubeEffile(
       THREE,
       versVecteur(THREE, na.lon, na.lat),
       versVecteur(THREE, nb.lon, nb.lat),
       r0,
+      (rayonDe.get(l.source) || 0) * 1.05,
+      (rayonDe.get(l.target) || 0) * 1.15,
+      Math.max(rayonDe.get(l.source) || 0, rayonDe.get(l.target) || 0),
     );
+    /*
+     * Mélange NORMAL, et surtout pas additif.
+     *
+     * L'additif convient à un globe décoratif sur fond sombre : il y fait
+     * rougeoyer les arcs. Ici le fond est blanc, et ajouter de la couleur à du
+     * blanc ne change rien — les arcs restaient invisibles partout où ils
+     * passaient au-dessus de la sphère, c'est-à-dire presque partout. Seuls
+     * ceux qui débordaient de la silhouette, sur le fond transparent du
+     * canevas, se voyaient encore : le globe mondial paraissait donc correct
+     * tandis que les échanges intra-européens avaient purement disparu.
+     */
     const mat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       uniforms: {
         uCouleur: { value: new THREE.Color(l.couleur || jeton("--viz-1", "#2a78d6")) },
@@ -622,9 +775,11 @@ export async function globe(hote, { noeuds, liens }, opts) {
           float tete = fract(uTemps * 0.35);
           float d = vT - tete;
           float imp = exp(-pow(d * 9.0, 2.0)) * uAnime;
-          float a = (base + imp * 0.8) * uSurligne;
+          float a = min(1.0, base + imp * 0.6) * uSurligne;
           if (a < 0.01) discard;
-          gl_FragColor = vec4(uCouleur * (1.0 + imp * 0.6), a);
+          // L'impulsion eclaircit vers le blanc plutot que d'ajouter de la
+          // lumiere : en melange normal, c'est ce qui la fait ressortir.
+          gl_FragColor = vec4(mix(uCouleur, vec3(1.0), imp * 0.55), a);
         }
       `,
     });
@@ -746,6 +901,8 @@ export async function globe(hote, { noeuds, liens }, opts) {
     rendu.setSize(cote, cote, false);
     rendu.domElement.style.width = `${cote}px`;
     rendu.domElement.style.height = `${cote}px`;
+    scene2d.style.width = `${cote}px`;
+    scene2d.style.height = `${cote}px`;
     camera.aspect = 1;
     camera.updateProjectionMatrix();
     matPoints.uniforms.uHauteur.value = cote * rendu.getPixelRatio();

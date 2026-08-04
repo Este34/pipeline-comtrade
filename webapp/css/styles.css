@@ -691,14 +691,30 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
   margin:10px 0 0;font-size:var(--fs-xs);color:var(--ink-muted);line-height:1.5;
 }
 
+/* Bascule Globe / Diagramme : deux lectures du même graphe. */
+.bascule-repr{display:flex;gap:4px;justify-content:flex-end;margin-bottom:8px;flex-wrap:wrap}
+.bascule-repr:empty{display:none}
+.bascule-btn{
+  font:inherit;font-size:var(--fs-xs);padding:5px 11px;cursor:pointer;
+  background:var(--surface-2);color:var(--ink-2);
+  border:1px solid var(--border);border-radius:var(--r-full);
+}
+.bascule-btn:hover{border-color:var(--border-strong)}
+.bascule-btn[aria-pressed="true"]{
+  background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700;
+}
+
 /* -- Globe des flux (three.js) ---------------------------------------- */
 /* La boîte est carrée : le rendu l'est aussi, et les étiquettes HTML posées
    par-dessus peuvent alors se positionner dans le repère du canevas sans
    correction d'offset. */
 .globe-box{
-  position:relative;width:100%;aspect-ratio:1;max-height:70vh;
+  width:100%;aspect-ratio:1;max-height:70vh;
   margin-inline:auto;display:flex;align-items:center;justify-content:center;
 }
+/* Exactement aux dimensions du rendu : c'est le repère commun du canevas, des
+   étiquettes et de l'infobulle. Voir le commentaire de `scene2d`. */
+.globe-scene{position:relative}
 .globe-toile{display:block;cursor:grab;border-radius:var(--r-md);outline-offset:3px}
 .globe-box.saisi .globe-toile{cursor:grabbing}
 .globe-box.designe .globe-toile{cursor:pointer}

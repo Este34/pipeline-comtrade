@@ -5,6 +5,9 @@ import { loadLabels } from "./labels.js";
 import { setStatus, wireBackToTop } from "./ui.js";
 import { mountPalette } from "./palette.js";
 import { purgerCartes } from "./map.js";
+// Volontairement importé depuis la bascule et NON depuis globe.js : ce dernier
+// n'entre ainsi jamais dans le chargement initial des onglets sans globe.
+import { purgerAffichages } from "./diagramme-flux.js";
 import { wireThemeToggle } from "./theme.js";
 
 import * as profil from "./views/profil-pays.js";
@@ -23,8 +26,11 @@ let ctx = null;
 
 async function activer(nom) {
   // Une carte dont le conteneur a été remplacé par une nouvelle analyse reste
-  // sinon vivante, avec son animation, jusqu'à saturation du navigateur.
+  // sinon vivante, avec son animation, jusqu'à saturation du navigateur. Un
+  // globe pose le même problème en pire : son contexte WebGL est une ressource
+  // que le navigateur ne distribue qu'à une poignée d'exemplaires.
   purgerCartes();
+  purgerAffichages();
 
   document.querySelectorAll(".tab").forEach((t) => {
     const actif = t.dataset.view === nom;

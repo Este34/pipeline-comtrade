@@ -75,8 +75,17 @@
   <div class="chart-card"><div class="card-body"><div id="d-globe" style="max-width:620px;margin-inline:auto"></div></div></div>
 </section>
 
+<section class="banc-sec">
+  <h2>5. Bascule Globe / Diagramme</h2>
+  <p>Ce que les vues appellent réellement. Le choix est mémorisé et s'applique aux deux cartes
+     ci-dessous d'un seul coup.</p>
+  <div class="chart-card"><div class="card-body"><div id="d-bascule-monde"></div></div></div>
+  <div class="chart-card" style="margin-top:16px"><div class="card-body"><div id="d-bascule-europe"></div></div></div>
+</section>
+
 <script type="module">
 import { bulles } from "../webapp/js/bulles.js";
+import { diagrammeFlux } from "../webapp/js/diagramme-flux.js";
 import { centroides, projeter, CADRES } from "../webapp/js/geo.js";
 import { jeton, wireThemeToggle } from "../webapp/js/theme.js";
 import { EXPORTATEURS, FLUX, MEMBRES, FLUX_INTRA, graphe, fmt, nom } from "./fixtures.js";
@@ -112,8 +121,8 @@ monter("d-europe", MEMBRES, FLUX_INTRA, "europe");
   bulles(document.getElementById("d-nu"), g, { fmt, resume: "Sans fond de carte." });
 }
 
-// Le globe n'existe pas encore au moment où ce banc est écrit : son absence ne
-// doit pas empêcher de vérifier les trois diagrammes ci-dessus.
+// Le globe appelé directement, sans la bascule : c'est ce qui permet de
+// distinguer une régression du socle 3D d'une régression de l'aiguillage.
 try {
   const { globe } = await import("../webapp/js/globe.js");
   // Sans `centre` : le globe s'oriente sur le barycentre des données.
@@ -125,6 +134,27 @@ try {
   document.getElementById("d-globe").innerHTML =
     `<div class="empty">Globe indisponible : ${e.message}</div>`;
   console.error(e);
+}
+
+// --- Ce que les vues appellent réellement --------------------------------
+//
+// Les nœuds ne portent QUE lon/lat : c'est `diagrammeFlux` qui projette pour le
+// diagramme. Si cette section tient, les vues tiennent.
+{
+  const brut = (pays, flux) => {
+    const proj = projeter(CADRES.monde, 1, 1);
+    const g = graphe({ pays, flux, centres, projeter: proj, couleurs: teinte });
+    return { noeuds: g.noeuds.map(({ x, y, ...reste }) => reste), liens: g.liens };
+  };
+
+  diagrammeFlux(document.getElementById("d-bascule-monde"), brut(EXPORTATEURS, FLUX), {
+    fmt, geojson, cadre: "monde",
+    resume: "Bascule, cadre mondial (valeurs inventées).",
+  });
+  diagrammeFlux(document.getElementById("d-bascule-europe"), brut(MEMBRES, FLUX_INTRA), {
+    fmt, geojson, cadre: "europe", centre: { lon: 12, lat: 52 },
+    resume: "Bascule, cadre européen (valeurs inventées).",
+  });
 }
 </script>
 </body>
