@@ -691,6 +691,12 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
   margin:10px 0 0;font-size:var(--fs-xs);color:var(--ink-muted);line-height:1.5;
 }
 
+/* Carte géographique repliable, en complément d'un Sankey. Elle n'est
+   construite qu'à l'ouverture : un globe consomme un contexte WebGL. */
+.carte-geo{margin-top:14px}
+.carte-geo>summary{font-weight:600}
+.carte-geo-corps{padding:12px 0 4px}
+
 /* Bascule Globe / Diagramme : deux lectures du même graphe. */
 .bascule-repr{display:flex;gap:4px;justify-content:flex-end;margin-bottom:8px;flex-wrap:wrap}
 .bascule-repr:empty{display:none}
