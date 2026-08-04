@@ -22,8 +22,8 @@
 // centre, ses partenaires autour). Le module se charge de ne pas laisser deux
 // bulles se recouvrir, d'écrire des libellés lisibles, de dessiner le fond de
 // carte quand il y en a un, et de produire l'alternative textuelle.
-import { esc } from "./format.js";
 import { jeton } from "./theme.js";
+import { tableauFlux } from "./ui.js";
 
 const NS = "http://www.w3.org/2000/svg";
 
@@ -598,22 +598,7 @@ export function bulles(hote, { noeuds, liens }, { fmt, resume, fond } = {}) {
        garder que ses échanges.</p>`);
   }
 
-  // Alternative textuelle. Un SVG, même correctement étiqueté, ne restitue pas
-  // ses valeurs à un lecteur d'écran : la même information est donc redonnée
-  // sous forme de tableau, masqué visuellement mais bien dans le document.
-  const alt = document.createElement("div");
-  alt.className = "sr-only";
-  alt.innerHTML = `
-    <table>
-      <caption>${esc(resume || "Flux représentés sur le diagramme")}</caption>
-      <thead><tr><th scope="col">Origine</th><th scope="col">Destination</th><th scope="col">Montant</th></tr></thead>
-      <tbody>${ordonnes.map((l) => {
-        const a = parId.get(l.source);
-        const b = parId.get(l.target);
-        return a && b
-          ? `<tr><td>${esc(a.titre || a.label)}</td><td>${esc(b.titre || b.label)}</td><td>${esc(fmt(l.valeur))}</td></tr>`
-          : "";
-      }).join("")}</tbody>
-    </table>`;
-  hote.appendChild(alt);
+  // Alternative textuelle, partagée avec le globe : les deux représentations
+  // portent le même graphe et doivent le restituer de la même façon.
+  hote.appendChild(tableauFlux(ordonnes, parId, fmt, resume));
 }

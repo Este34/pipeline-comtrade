@@ -691,6 +691,39 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
   margin:10px 0 0;font-size:var(--fs-xs);color:var(--ink-muted);line-height:1.5;
 }
 
+/* -- Globe des flux (three.js) ---------------------------------------- */
+/* La boîte est carrée : le rendu l'est aussi, et les étiquettes HTML posées
+   par-dessus peuvent alors se positionner dans le repère du canevas sans
+   correction d'offset. */
+.globe-box{
+  position:relative;width:100%;aspect-ratio:1;max-height:70vh;
+  margin-inline:auto;display:flex;align-items:center;justify-content:center;
+}
+.globe-toile{display:block;cursor:grab;border-radius:var(--r-md);outline-offset:3px}
+.globe-box.saisi .globe-toile{cursor:grabbing}
+.globe-box.designe .globe-toile{cursor:pointer}
+.globe-toile:focus-visible{outline:2px solid var(--focus)}
+
+.globe-etiquettes{position:absolute;inset:0;pointer-events:none}
+.globe-etiquette{
+  position:absolute;top:0;left:0;white-space:nowrap;
+  font-size:11.5px;font-weight:700;color:var(--ink);
+  /* Liseré de surface : l'étiquette reste lisible au-dessus d'un arc ou d'un
+     semis de points, sans boîte opaque qui masquerait la géographie. */
+  text-shadow:0 0 3px var(--surface),0 0 3px var(--surface),0 0 6px var(--surface);
+  transition:opacity var(--t-fast) ease;
+}
+.globe-etiquette.estompe{opacity:.25}
+
+.globe-infobulle{
+  position:absolute;top:0;left:0;pointer-events:none;opacity:0;
+  transform-origin:0 0;margin:14px 0 0 14px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);
+  box-shadow:var(--shadow-sm);padding:6px 10px;font-size:var(--fs-sm);
+  color:var(--ink);line-height:1.35;transition:opacity var(--t-fast) ease;
+}
+.globe-infobulle.visible{opacity:1}
+
 /* -- Carte Leaflet ---------------------------------------------------- */
 .map-box{width:100%;height:460px;border-radius:var(--r-md);border:1px solid var(--border);z-index:0}
 .map-controls{display:flex;align-items:center;gap:12px;margin-bottom:10px}

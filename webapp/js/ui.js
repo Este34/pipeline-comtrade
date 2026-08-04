@@ -409,6 +409,40 @@ export function card(titre, exportId) {
   return el;
 }
 
+/**
+ * Tableau équivalent d'un graphe de flux, masqué visuellement.
+ *
+ * Un SVG comme un canevas WebGL, même correctement étiquetés, ne restituent pas
+ * leurs valeurs à un lecteur d'écran : la même information est redonnée sous
+ * forme de tableau, bien présent dans le document.
+ *
+ * Cette fonction est partagée par le diagramme (`bulles.js`) et le globe
+ * (`globe.js`) : les deux représentent exactement le même graphe, et rien ne
+ * justifierait que leur restitution textuelle diverge avec le temps.
+ *
+ * @param {Array<{source,target,valeur}>} liens triés du plus gros au plus petit
+ * @param {Map<string,{label:string,titre?:string}>} parId nœuds indexés
+ * @param {(v:number)=>string} fmt
+ * @param {string} [resume] légende du tableau
+ */
+export function tableauFlux(liens, parId, fmt, resume) {
+  const div = document.createElement("div");
+  div.className = "sr-only";
+  div.innerHTML = `
+    <table>
+      <caption>${esc(resume || "Flux représentés sur le graphique")}</caption>
+      <thead><tr><th scope="col">Origine</th><th scope="col">Destination</th><th scope="col">Montant</th></tr></thead>
+      <tbody>${liens.map((l) => {
+        const a = parId.get(l.source);
+        const b = parId.get(l.target);
+        return a && b
+          ? `<tr><td>${esc(a.titre || a.label)}</td><td>${esc(b.titre || b.label)}</td><td>${esc(fmt(l.valeur))}</td></tr>`
+          : "";
+      }).join("")}</tbody>
+    </table>`;
+  return div;
+}
+
 export function setStatus(msg, isError = false) {
   const el = document.getElementById("status");
   if (!el) return;

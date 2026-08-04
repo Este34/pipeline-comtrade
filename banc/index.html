@@ -72,7 +72,7 @@
 <section class="banc-sec">
   <h2>4. Globe</h2>
   <p>Même graphe que la section 1, en trois dimensions.</p>
-  <div class="chart-card"><div class="card-body"><div id="d-globe" style="height:520px"></div></div></div>
+  <div class="chart-card"><div class="card-body"><div id="d-globe" style="max-width:620px;margin-inline:auto"></div></div></div>
 </section>
 
 <script type="module">
@@ -116,10 +116,10 @@ monter("d-europe", MEMBRES, FLUX_INTRA, "europe");
 // doit pas empêcher de vérifier les trois diagrammes ci-dessus.
 try {
   const { globe } = await import("../webapp/js/globe.js");
+  // Sans `centre` : le globe s'oriente sur le barycentre des données.
   globe(document.getElementById("d-globe"), gMonde, {
     fmt, geojson,
     resume: "Banc d'essai : globe des flux (valeurs inventées).",
-    centre: { lon: 10, lat: 48 },
   });
 } catch (e) {
   document.getElementById("d-globe").innerHTML =
