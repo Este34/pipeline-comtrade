@@ -4,3 +4,9 @@
 # Les scripts shell sont exécutés par le conteneur de build Vercel (Linux) :
 # des fins de ligne CRLF les feraient échouer sur « \r: command not found ».
 *.sh text eol=lf
+
+# Bibliothèques vendorisées : laissées telles quelles, octet pour octet.
+# La normalisation des fins de ligne les rendrait différentes de l'archive
+# officielle, ce qui empêche de vérifier qu'on sert bien la version annoncée —
+# la seule garantie qu'on ait sur du code minifié qu'on ne relit pas.
+webapp/vendor/** -text
