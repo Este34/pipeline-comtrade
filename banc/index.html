@@ -83,6 +83,14 @@
   <div class="chart-card" style="margin-top:16px"><div class="card-body"><div id="d-bascule-europe"></div></div></div>
 </section>
 
+<section class="banc-sec">
+  <h2>6. Choroplèthe sur globe</h2>
+  <p>Texture équirectangulaire repeinte par année, désignation par canevas d'index. Vérifier que
+     les continents tombent au bon endroit — un décalage d'un quart de tour ne se voit qu'en
+     regardant.</p>
+  <div class="chart-card"><div class="card-body"><div id="d-choro" style="max-width:620px;margin-inline:auto"></div></div></div>
+</section>
+
 <script type="module">
 import { bulles } from "../webapp/js/bulles.js";
 import { diagrammeFlux } from "../webapp/js/diagramme-flux.js";
@@ -155,6 +163,36 @@ try {
     fmt, geojson, cadre: "europe", centre: { lon: 12, lat: 52 },
     resume: "Bascule, cadre européen (valeurs inventées).",
   });
+}
+
+// --- Choroplèthe sur globe ------------------------------------------------
+//
+// Séries par année, entièrement inventées : elles ne servent qu'à vérifier que
+// la texture est peinte, calée sur la bonne longitude, et que la désignation
+// par couleur retrouve le bon pays.
+{
+  const ANNEES = Array.from({ length: 26 }, (_, i) => 2000 + i);
+  const parAnnee = new Map(ANNEES.map((a) => {
+    const m = new Map();
+    for (const [iso, base] of [...EXPORTATEURS, ...MEMBRES]) {
+      // Croissance régulière, pour que le curseur d'année montre un changement.
+      m.set(iso, base * (0.4 + ((a - 2000) / 25) * 1.2));
+    }
+    return [a, m];
+  }));
+
+  try {
+    const { globeChoroplethe } = await import("../webapp/js/globe-choroplethe.js");
+    await globeChoroplethe(document.getElementById("d-choro"), geojson, parAnnee, {
+      annees: ANNEES,
+      labelFn: nom,
+      fmt: (v) => fmt(v),
+    });
+  } catch (e) {
+    document.getElementById("d-choro").innerHTML =
+      `<div class="empty">Choroplèthe indisponible : ${e.message}</div>`;
+    console.error(e);
+  }
 }
 </script>
 </body>

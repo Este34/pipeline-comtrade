@@ -8,7 +8,33 @@ import {
   multiSelectHTML, wireMultiSelect, ANNEES,
 } from "../ui.js";
 import { lineChart } from "../charts.js";
-import { interactiveMap } from "../map.js";
+import { interactiveMap, purgerCartes } from "../map.js";
+import { purgerChoroplethes } from "../globe-choroplethe.js";
+
+/*
+ * Représentation de la carte : plan ou globe.
+ *
+ * Le PLAN reste le défaut, à rebours du reste de l'application. Une choroplèthe
+ * sert à comparer des pays entre eux, et un globe en cache la moitié en
+ * permanence ; Leaflet fait ici mieux — zoom, tuiles, infobulles, clic. Le
+ * globe est proposé en seconde lecture, pas en remplacement. Le rapport
+ * s'inverse sur les arcs de flux, où c'est le globe qui gagne : voir globe.js.
+ */
+const CLE_REPR = "comtrade:carte";
+const lireRepr = () => {
+  try {
+    return localStorage.getItem(CLE_REPR) === "globe" ? "globe" : "plan";
+  } catch {
+    return "plan";
+  }
+};
+const ecrireRepr = (v) => {
+  try {
+    localStorage.setItem(CLE_REPR, v);
+  } catch {
+    /* stockage indisponible : le choix vaut pour la session */
+  }
+};
 
 let _geo = null;
 async function geo() {
@@ -71,19 +97,69 @@ export async function mount(container, { labels }) {
     const fluxLabel = flux === "X" ? "Exportations" : "Importations";
     const c = card(`${fluxLabel} totales par pays, animation 2000 à 2025`, "ct-map-csv");
     mapHost.appendChild(c);
-    interactiveMap(c.querySelector(".card-body"), await geo(), parAnnee, {
-      annees: ANNEES,
-      metric,
-      labelFn: (iso3) => pays(labels, iso3),
-      fmt: axisFmt(metric),
-      onClick: (iso3) => {
-        if (!iso3) return;
-        const opt = [...multi.options].find((o) => o.value === iso3);
-        // La sélection étant modifiée par programme ici, les cases à cocher
-        // doivent être resynchronisées pour rester le reflet fidèle du select.
-        if (opt) { opt.selected = true; listePays.sync(); comparer(); }
-      },
+    const corps = c.querySelector(".card-body");
+
+    const surClicPays = (iso3) => {
+      if (!iso3) return;
+      const opt = [...multi.options].find((o) => o.value === iso3);
+      // La sélection étant modifiée par programme ici, les cases à cocher
+      // doivent être resynchronisées pour rester le reflet fidèle du select.
+      if (opt) { opt.selected = true; listePays.sync(); comparer(); }
+    };
+
+    const bascule = document.createElement("div");
+    bascule.className = "bascule-repr";
+    corps.appendChild(bascule);
+    const hoteCarte = document.createElement("div");
+    corps.appendChild(hoteCarte);
+
+    const geojson = await geo();
+
+    async function dessinerCarte() {
+      // Les deux représentations tiennent chacune un contexte lourd — une
+      // instance Leaflet, un contexte WebGL — et le conteneur est vidé entre
+      // les deux : sans purge explicite, l'abandonnée survit avec ses écouteurs.
+      purgerCartes({ toutes: true });
+      purgerChoroplethes({ toutes: true });
+      hoteCarte.innerHTML = "";
+      bascule.innerHTML = ["plan", "globe"].map((m) => `
+        <button type="button" class="bascule-btn" data-repr="${m}"
+                aria-pressed="${m === lireRepr()}">${m === "plan" ? "🗺 Carte plane" : "🌍 Globe"}</button>`).join("");
+
+      if (lireRepr() === "globe") {
+        try {
+          const { globeChoroplethe } = await import("../globe-choroplethe.js");
+          const g = await globeChoroplethe(hoteCarte, geojson, parAnnee, {
+            annees: ANNEES,
+            labelFn: (iso3) => pays(labels, iso3),
+            fmt: axisFmt(metric),
+            onClick: surClicPays,
+          });
+          if (g) return;
+          throw new Error("WebGL indisponible");
+        } catch (e) {
+          // Repli silencieux sur la carte plane, qui dit la même chose.
+          console.warn("Globe indisponible, repli sur la carte plane :", e.message);
+          ecrireRepr("plan");
+          bascule.innerHTML = "";
+        }
+      }
+      interactiveMap(hoteCarte, geojson, parAnnee, {
+        annees: ANNEES,
+        metric,
+        labelFn: (iso3) => pays(labels, iso3),
+        fmt: axisFmt(metric),
+        onClick: surClicPays,
+      });
+    }
+
+    bascule.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-repr]");
+      if (!b || b.dataset.repr === lireRepr()) return;
+      ecrireRepr(b.dataset.repr);
+      dessinerCarte();
     });
+    await dessinerCarte();
     c.querySelector("[data-export]").addEventListener("click", () =>
       downloadCsv(`carte_${flux}.csv`, rows.map((r) => ({ annee: r.period, pays: pays(labels, r.reporterISO3), iso3: r.reporterISO3, valeur_usd: Math.round(r.valeur || 0), poids_kg: Math.round(r.poids || 0) })))
     );
