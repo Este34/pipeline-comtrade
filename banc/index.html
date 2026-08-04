@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Banc d'essai — représentations de flux</title>
+<!--
+  Banc d'essai des modules de représentation, HORS de l'application.
+
+  Il vit à la racine du dépôt, donc hors de `outputDirectory: webapp` : il n'est
+  jamais déployé. Il existe parce que les Parquet UN Comtrade et le moteur
+  DuckDB-WASM ne sont pas disponibles en local (ils arrivent d'une archive de
+  release au moment du build Vercel) : sans lui, aucune vérification du rendu ne
+  serait possible avant déploiement.
+
+  Servir depuis la RACINE du dépôt, pas depuis webapp/ :
+      python -m http.server 8123
+      http://localhost:8123/banc/
+-->
+<script>
+  try {
+    var t = localStorage.getItem("comtrade:theme");
+    if (t === "clair") document.documentElement.setAttribute("data-theme", "light");
+    else if (t === "sombre") document.documentElement.setAttribute("data-theme", "dark");
+  } catch (e) { /* stockage refusé */ }
+</script>
+<link rel="stylesheet" href="../webapp/css/styles.css" />
+<style>
+  body{padding:24px;max-width:1200px;margin:0 auto}
+  .banc-tete{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+  .banc-avert{
+    border:1px solid var(--warn);background:var(--surface-2);color:var(--ink-2);
+    border-radius:var(--r-md);padding:10px 14px;margin:12px 0 24px;font-size:var(--fs-sm);
+  }
+  .banc-sec{margin:34px 0}
+  .banc-sec>h2{font-size:var(--fs-lg);margin:0 0 4px}
+  .banc-sec>p{color:var(--ink-muted);font-size:var(--fs-sm);margin:0 0 12px}
+</style>
+</head>
+<body>
+
+<div class="banc-tete">
+  <h1>Banc d'essai — représentations de flux</h1>
+  <button type="button" class="btn" id="themeBtn">◐ Thème</button>
+</div>
+
+<p class="banc-avert">
+  <b>Les valeurs affichées sont inventées</b> et ne proviennent pas d'UN&nbsp;Comtrade. Seuls les
+  codes pays et leurs positions sont réels. Ce banc sert à vérifier le rendu, jamais à lire des
+  chiffres.
+</p>
+
+<section class="banc-sec">
+  <h2>1. Diagramme — cadre mondial</h2>
+  <p>Quatorze exportateurs, dix-huit flux. Fond de côtes, tiges de rappel, rubans effilés.</p>
+  <div class="chart-card"><div class="card-body" id="d-monde"></div></div>
+</section>
+
+<section class="banc-sec">
+  <h2>2. Diagramme — cadre européen</h2>
+  <p>Onze États membres, douze flux internes. Le cadre est presque carré : le format du dessin doit
+     suivre, sans étirer la Scandinavie.</p>
+  <div class="chart-card"><div class="card-body" id="d-europe"></div></div>
+</section>
+
+<section class="banc-sec">
+  <h2>3. Diagramme — sans fond de carte</h2>
+  <p>Comportement historique conservé, celui dont la disposition en couronne a besoin.</p>
+  <div class="chart-card"><div class="card-body" id="d-nu"></div></div>
+</section>
+
+<section class="banc-sec">
+  <h2>4. Globe</h2>
+  <p>Même graphe que la section 1, en trois dimensions.</p>
+  <div class="chart-card"><div class="card-body"><div id="d-globe" style="height:520px"></div></div></div>
+</section>
+
+<script type="module">
+import { bulles } from "../webapp/js/bulles.js";
+import { centroides, projeter, CADRES } from "../webapp/js/geo.js";
+import { jeton, wireThemeToggle } from "../webapp/js/theme.js";
+import { EXPORTATEURS, FLUX, MEMBRES, FLUX_INTRA, graphe, fmt, nom } from "./fixtures.js";
+
+wireThemeToggle(document.getElementById("themeBtn"));
+
+const geojson = await (await fetch("../webapp/vendor/world.geo.json")).json();
+const centres = centroides(geojson);
+
+const UE = new Set(["DEU","ITA","FRA","ESP","POL","BEL","NLD","AUT","SWE","CZE","PRT"]);
+const teinte = (iso) => (UE.has(iso) ? jeton("--accent") : jeton("--viz-1"));
+
+function monter(cible, pays, flux, cadreNom) {
+  const cadre = CADRES[cadreNom];
+  const proj = projeter(cadre, 1, 1);
+  const g = graphe({ pays, flux, centres, projeter: proj, couleurs: teinte });
+  bulles(document.getElementById(cible), g, {
+    fmt,
+    resume: `Banc d'essai : ${g.noeuds.length} pays, ${g.liens.length} flux (valeurs inventées).`,
+    fond: { geojson, projeter: proj, cadre },
+  });
+  if (g.hors.length) console.warn(`${cible} — hors cadre :`, g.hors.map(nom).join(", "));
+  return g;
+}
+
+const gMonde = monter("d-monde", EXPORTATEURS, FLUX, "monde");
+monter("d-europe", MEMBRES, FLUX_INTRA, "europe");
+
+// Sans fond : mêmes positions, cadre historique.
+{
+  const proj = projeter(CADRES.monde, 1, 1);
+  const g = graphe({ pays: EXPORTATEURS, flux: FLUX, centres, projeter: proj, couleurs: teinte });
+  bulles(document.getElementById("d-nu"), g, { fmt, resume: "Sans fond de carte." });
+}
+
+// Le globe n'existe pas encore au moment où ce banc est écrit : son absence ne
+// doit pas empêcher de vérifier les trois diagrammes ci-dessus.
+try {
+  const { globe } = await import("../webapp/js/globe.js");
+  globe(document.getElementById("d-globe"), gMonde, {
+    fmt, geojson,
+    resume: "Banc d'essai : globe des flux (valeurs inventées).",
+    centre: { lon: 10, lat: 48 },
+  });
+} catch (e) {
+  document.getElementById("d-globe").innerHTML =
+    `<div class="empty">Globe indisponible : ${e.message}</div>`;
+  console.error(e);
+}
+</script>
+</body>
+</html>

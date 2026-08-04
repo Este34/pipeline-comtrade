@@ -646,21 +646,49 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
   border-top:2px solid var(--border-strong);font-weight:700;
 }
 
-/* -- Diagramme à bulles et flèches (vue Europe) ----------------------- */
+/* -- Diagramme de flux : fond, bulles, rubans (vues Europe et Flux) ---- */
 .bulles{display:block;width:100%;height:auto;overflow:visible}
-.bulle{cursor:pointer;transition:filter var(--t-fast) ease}
+.bulle{cursor:pointer;transition:filter var(--t-fast) ease,opacity var(--t-fast) ease}
 .bulle:hover{filter:brightness(1.12)}
+.bulle.estompe{opacity:.22}
 .bulle-txt{font-size:12px;font-weight:700;fill:var(--ink);pointer-events:none}
 .bulle-txt-int{fill:#fff}
 .bulle-val{font-size:10.5px;font-weight:400;fill:var(--ink-muted);pointer-events:none}
 .bulle-val-int{fill:rgba(255,255,255,.85)}
 .bulle-rappel{stroke:var(--border-strong);stroke-width:1;fill:none}
-.fleche{transition:opacity var(--t-fast) ease}
-.fleche.estompe{opacity:.08}
-.fleche.surligne{opacity:1}
 .bulles-groupe{
   font-size:10.5px;font-weight:700;letter-spacing:.08em;
   text-transform:uppercase;fill:var(--ink-muted);
+}
+
+/* Fond de carte : il situe les bulles, il ne se lit pas pour lui-même. D'où
+   une terre à peine plus dense que la mer et un trait filiforme — au premier
+   plan, ce sont les flux qu'on doit voir. */
+.fond-mer{fill:var(--surface-2)}
+.fond-terres{fill:var(--border);stroke:var(--border-strong);stroke-width:.7;stroke-linejoin:round}
+
+/* Tige de rappel : relie une bulle écartée par le relâchement à sa position
+   géographique vraie, marquée d'un point. */
+.tige{stroke:var(--border-strong);stroke-width:1;stroke-dasharray:2 3;transition:opacity var(--t-fast) ease}
+.tige-point{fill:var(--border-strong)}
+.tige.estompe{opacity:.15}
+
+.ruban{transition:opacity var(--t-fast) ease;cursor:pointer}
+.ruban.estompe{opacity:.06}
+.ruban.surligne{opacity:1}
+.ruban-corps{stroke:none}
+/* L'impulsion parcourt la ligne médiane du départ vers l'arrivée. `pathLength`
+   valant 100 sur le chemin, le motif et l'animation s'écrivent en pourcentage
+   de la longueur, quelle que soit la distance réelle entre les deux pays. */
+.ruban-impulsion{
+  stroke-linecap:round;stroke-dasharray:5 95;
+  animation:fluxImpulsion 2.6s linear infinite;
+  opacity:.9;pointer-events:none;
+}
+@keyframes fluxImpulsion{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+
+.legende-flux{
+  margin:10px 0 0;font-size:var(--fs-xs);color:var(--ink-muted);line-height:1.5;
 }
 
 /* -- Carte Leaflet ---------------------------------------------------- */
