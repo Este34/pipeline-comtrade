@@ -9,7 +9,16 @@ import {
 } from "../ui.js";
 import { lineChart } from "../charts.js";
 import { interactiveMap, purgerCartes } from "../map.js";
-import { purgerChoroplethes } from "../globe-choroplethe.js";
+
+/*
+ * Le module du globe n'est JAMAIS importé statiquement, pas même pour sa
+ * fonction de purge : l'importer ferait entrer ses 17 Ko dans le chargement
+ * initial des huit onglets, dont sept n'affichent aucun globe. La référence est
+ * gardée après le premier import dynamique, et la purge n'a de toute façon rien
+ * à nettoyer tant qu'aucun globe n'a été construit.
+ */
+let modGlobe = null;
+const purgerGlobeCarte = (o) => modGlobe?.purgerChoroplethes(o);
 
 /*
  * Représentation de la carte : plan ou globe.
@@ -120,7 +129,7 @@ export async function mount(container, { labels }) {
       // instance Leaflet, un contexte WebGL — et le conteneur est vidé entre
       // les deux : sans purge explicite, l'abandonnée survit avec ses écouteurs.
       purgerCartes({ toutes: true });
-      purgerChoroplethes({ toutes: true });
+      purgerGlobeCarte({ toutes: true });
       hoteCarte.innerHTML = "";
       bascule.innerHTML = ["plan", "globe"].map((m) => `
         <button type="button" class="bascule-btn" data-repr="${m}"
@@ -128,8 +137,8 @@ export async function mount(container, { labels }) {
 
       if (lireRepr() === "globe") {
         try {
-          const { globeChoroplethe } = await import("../globe-choroplethe.js");
-          const g = await globeChoroplethe(hoteCarte, geojson, parAnnee, {
+          modGlobe = await import("../globe-choroplethe.js");
+          const g = await modGlobe.globeChoroplethe(hoteCarte, geojson, parAnnee, {
             annees: ANNEES,
             labelFn: (iso3) => pays(labels, iso3),
             fmt: axisFmt(metric),
