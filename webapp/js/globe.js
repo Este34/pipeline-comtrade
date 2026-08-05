@@ -39,6 +39,25 @@ const DISTANCE_CAMERA = 4.4;
 const CHAMP = 38;
 const RAYON_ATMOSPHERE = 1.22;
 
+/**
+ * Bornes du zoom, en distance de caméra.
+ *
+ * Le minimum n'est pas le rayon du globe : à 1,3 la perspective devient si
+ * rasante que la sphère se lit comme un mur, et les arcs qui s'en élèvent
+ * partent hors cadre. 1,55 laisse voir un pays et ses voisins immédiats.
+ *
+ * Le maximum est la distance nominale : au-delà, on s'éloigne d'une sphère
+ * qu'on voit déjà tout entière, et le globe ne fait que rétrécir dans du vide.
+ */
+const ZOOM_MIN = 1.55;
+const ZOOM_MAX = DISTANCE_CAMERA;
+
+/** Sensibilité de la molette, en unités de `deltaY`. */
+const SENSIBILITE_ZOOM = 0.0013;
+
+/** Facteur d'un cran de zoom au bouton ou au clavier. */
+const CRAN_ZOOM = 1.25;
+
 /** Semis de points AVANT filtrage par les terres ; ~29 % survivent. */
 const NB_POINTS = 22000;
 
@@ -333,20 +352,22 @@ function cadrer(noeuds, centre) {
   // Une marge : sans elle, les bulles du bord touchent le cadre.
   const theta = Math.min(Math.PI / 2.2, thetaMax * 1.25);
   const cible = 0.75 * Math.tan((CHAMP / 2) * (Math.PI / 180));
-  const distance = Math.min(
+  return Math.min(
     DISTANCE_CAMERA,
     Math.max(2.4, Math.cos(theta) + Math.sin(theta) / cible),
   );
-  return {
-    distance,
-    /*
-     * L'atmosphère n'est montrée que si elle tient dans le champ. À courte
-     * distance, la demi-hauteur visible au centre (tan(19°) × D) descend sous
-     * son rayon de 1,22 : elle se ferait trancher et rendrait au globe la
-     * silhouette octogonale qu'on avait justement corrigée.
-     */
-    montrerAtmosphere: Math.tan((CHAMP / 2) * (Math.PI / 180)) * distance > RAYON_ATMOSPHERE,
-  };
+}
+
+/**
+ * L'atmosphère tient-elle dans le champ à cette distance ?
+ *
+ * À courte distance, la demi-hauteur visible au centre (tan(19°) × D) descend
+ * sous son rayon de 1,22 : elle se ferait trancher et rendrait au globe la
+ * silhouette octogonale qu'on avait justement corrigée. Le zoom rendant la
+ * distance variable, la question se repose à chaque cran.
+ */
+function atmosphereTient(distance) {
+  return Math.tan((CHAMP / 2) * (Math.PI / 180)) * distance > RAYON_ATMOSPHERE;
 }
 
 /** Barycentre des nœuds pondéré par le volume, en degrés. Voir `centre`. */
@@ -412,8 +433,10 @@ export async function globe(hote, { noeuds, liens }, opts) {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(CHAMP, 1, 0.1, 100);
-  const cadrage = cadrer(actifs, centre);
-  camera.position.set(0, 0, cadrage.distance);
+  // Distance d'ouverture, ajustée aux données ; le zoom la fait ensuite varier.
+  const distanceInitiale = cadrer(actifs, centre);
+  let distance = distanceInitiale;
+  camera.position.set(0, 0, distance);
 
   let rendu;
   try {
@@ -458,6 +481,27 @@ export async function globe(hote, { noeuds, liens }, opts) {
   scene2d.appendChild(infobulle);
 
   /*
+   * Commandes de zoom, en plus de la molette.
+   *
+   * La molette seule ne suffit pas : elle n'existe pas sur un écran tactile, ne
+   * s'atteint pas au clavier, et rien ne signale qu'on peut zoomer. Deux
+   * boutons répondent aux trois à la fois — c'est ce que fait Leaflet, et le
+   * lecteur les reconnaîtra d'une carte à l'autre.
+   */
+  const zoomUI = document.createElement("div");
+  zoomUI.className = "globe-zoom";
+  zoomUI.innerHTML = `
+    <button type="button" class="globe-zoom-btn" data-zoom="plus" aria-label="Zoomer">+</button>
+    <button type="button" class="globe-zoom-btn" data-zoom="moins" aria-label="Dézoomer">−</button>
+    <button type="button" class="globe-zoom-btn" data-zoom="init" aria-label="Revenir au cadrage initial">⟲</button>`;
+  scene2d.appendChild(zoomUI);
+  const boutonPlus = zoomUI.querySelector('[data-zoom="plus"]');
+  const boutonMoins = zoomUI.querySelector('[data-zoom="moins"]');
+  // État initial : le cadrage d'ouverture est souvent déjà au maximum.
+  boutonMoins.disabled = distance >= ZOOM_MAX - 1e-3;
+  boutonPlus.disabled = distance <= ZOOM_MIN + 1e-3;
+
+  /*
    * Deux groupes emboîtés : le parent porte le tangage, l'enfant le lacet.
    *
    * L'ordre compte. Le lacet est appliqué EN PREMIER, donc autour de l'axe des
@@ -480,6 +524,7 @@ export async function globe(hote, { noeuds, liens }, opts) {
   let matTraits;
   let matAtmo;
   let matPlein;
+  let mailleAtmo;
   /** Côté du canevas en pixels CSS, tenu à jour par `redimensionner()`. */
   let cote = 1;
 
@@ -545,7 +590,7 @@ export async function globe(hote, { noeuds, liens }, opts) {
         uCouleur: { value: couleurs.terres },
         uTaille: { value: 2.1 },
         uHauteur: { value: 600 },
-        uDistance: { value: cadrage.distance },
+        uDistance: { value: distance },
       },
       vertexShader: `
         uniform float uTaille;
@@ -660,10 +705,11 @@ export async function globe(hote, { noeuds, liens }, opts) {
       `,
     });
     const maille = new THREE.Mesh(geo, mat);
-    maille.visible = cadrage.montrerAtmosphere;
+    maille.visible = atmosphereTient(distance);
     pivot.add(maille);
     aJeter.push(geo, mat);
     matAtmo = mat;
+    mailleAtmo = maille;
   }
 
   // --- Bulles --------------------------------------------------------------
@@ -840,13 +886,27 @@ export async function globe(hote, { noeuds, liens }, opts) {
     // à chaque image forcerait un recalcul de mise en page soixante fois par
     // seconde, pour une valeur qui ne change qu'au redimensionnement.
     const vue = new THREE.Vector3();
+    const bord = new THREE.Vector3();
     for (const b of bulles) {
       b.maille.getWorldPosition(vue);
       const monde = vue.clone();
+      /*
+       * Rayon à l'écran obtenu par PROJECTION, et non par une formule tirée
+       * d'une distance de caméra supposée fixe.
+       *
+       * La caméra ne bougeait pas quand cette taille a été écrite ; depuis le
+       * zoom, elle bouge. Un rayon figé laissait les étiquettes retomber sur
+       * les disques une fois zoomé, et surtout gardait une cible de survol de
+       * la taille d'une bulle vue de loin. On projette donc le centre puis un
+       * point décalé du rayon, et on mesure l'écart réellement obtenu.
+       */
+      bord.copy(monde).x += b.r;
+      bord.project(camera);
       vue.project(camera);
       const ex = (vue.x * 0.5 + 0.5) * cote;
       const ey = (-vue.y * 0.5 + 0.5) * cote;
-      b.ecran = { x: ex, y: ey, r: Math.max(10, (b.r / RAYON) * cote * 0.42) };
+      const rEcran = Math.abs((bord.x - vue.x) * 0.5 * cote);
+      b.ecran = { x: ex, y: ey, r: Math.max(8, rEcran) };
       // Face cachée : le point est derrière le centre du globe vu de la caméra.
       const devant = monde.normalize().dot(camera.position.clone().normalize()) > 0.08;
       b.devant = devant;
@@ -894,6 +954,27 @@ export async function globe(hote, { noeuds, liens }, opts) {
     dernier = 0;
     image = requestAnimationFrame(boucle);
   };
+
+  /**
+   * Règle la distance de caméra, donc le zoom.
+   *
+   * Trois choses en dépendent et doivent suivre, faute de quoi le globe zoomé
+   * paraît faux sans qu'on sache pourquoi : l'atmosphère, qui se ferait
+   * trancher de près ; la taille des points du semis, qui garderait la densité
+   * d'une vue mondiale sur un cadre régional ; et l'état des boutons, dont il
+   * faut désactiver celui qui ne fait plus rien.
+   */
+  function setDistance(d) {
+    const avant = distance;
+    distance = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, d));
+    if (distance === avant) return;
+    camera.position.z = distance;
+    if (mailleAtmo) mailleAtmo.visible = atmosphereTient(distance);
+    if (matPoints) matPoints.uniforms.uDistance.value = distance;
+    boutonMoins.disabled = distance >= ZOOM_MAX - 1e-3;
+    boutonPlus.disabled = distance <= ZOOM_MIN + 1e-3;
+    invalider();
+  }
 
   function redimensionner() {
     const r = boite.getBoundingClientRect();
@@ -1018,7 +1099,19 @@ export async function globe(hote, { noeuds, liens }, opts) {
     if (b) onClick(b.noeud.id);
   };
 
-  // Clavier : les flèches font tourner le globe quand le canevas a le focus.
+  /*
+   * Molette : zoom, et défilement de la page empêché.
+   *
+   * `passive: false` est indispensable — sans lui le navigateur refuse le
+   * `preventDefault()` et la page défile sous le curseur pendant qu'on zoome.
+   * C'est le comportement d'une carte Leaflet, que le lecteur connaît déjà.
+   */
+  const surMolette = (evt) => {
+    evt.preventDefault();
+    setDistance(distance * Math.exp(evt.deltaY * SENSIBILITE_ZOOM));
+  };
+
+  // Clavier : flèches pour tourner, +/− pour zoomer, quand le canevas a le focus.
   const surTouche = (evt) => {
     const PAS = 0.12;
     const gestes = {
@@ -1026,12 +1119,24 @@ export async function globe(hote, { noeuds, liens }, opts) {
       ArrowRight: () => { lacet += PAS; },
       ArrowUp: () => { tangage = borner(tangage - PAS); },
       ArrowDown: () => { tangage = borner(tangage + PAS); },
+      "+": () => setDistance(distance / CRAN_ZOOM),
+      "=": () => setDistance(distance / CRAN_ZOOM),
+      "-": () => setDistance(distance * CRAN_ZOOM),
+      Home: () => setDistance(distanceInitiale),
     };
     if (!gestes[evt.key]) return;
     evt.preventDefault();
     gestes[evt.key]();
     invalider();
   };
+
+  zoomUI.addEventListener("click", (evt) => {
+    const b = evt.target.closest("[data-zoom]");
+    if (!b) return;
+    if (b.dataset.zoom === "plus") setDistance(distance / CRAN_ZOOM);
+    else if (b.dataset.zoom === "moins") setDistance(distance * CRAN_ZOOM);
+    else setDistance(distanceInitiale);
+  });
 
   const cible = rendu.domElement;
   cible.addEventListener("pointerdown", surPointerDown);
@@ -1043,6 +1148,7 @@ export async function globe(hote, { noeuds, liens }, opts) {
   });
   cible.addEventListener("click", surClic);
   cible.addEventListener("keydown", surTouche);
+  cible.addEventListener("wheel", surMolette, { passive: false });
 
   const surVisibilite = () => { visible = document.visibilityState === "visible"; relancer(); };
   document.addEventListener("visibilitychange", surVisibilite);

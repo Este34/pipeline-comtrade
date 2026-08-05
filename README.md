@@ -360,6 +360,15 @@ Le partage n'est pas une question de goût :
   couronne de « l'Union face au monde » est délibérément non géographique —
   l'UE agrégée n'est pas un point, et l'y poser serait un mensonge.
 
+Le globe se **zoome** — molette, boutons `+` / `−` / `⟲`, touches `+` et `−` au
+clavier —, entre une distance de caméra de 4,4 et de 1,55. En deçà, la
+perspective devient si rasante que la sphère se lit comme un mur et que les arcs
+partent hors cadre. Zoomer déplace la caméra, donc l'atmosphère se masque quand
+elle ne tient plus dans le champ, la taille des points du semis suit, et le
+rayon d'écran des bulles est obtenu **par projection** — une taille figée
+laissait les étiquettes retomber sur les disques et gardait une cible de survol
+calibrée pour une vue lointaine.
+
 Le sens d'un flux se lit dans la **forme** et non dans une pointe de flèche : le
 ruban part large de l'origine et s'affine vers la destination, en gagnant en
 densité ce qu'il perd en largeur. Vingt-deux triangles encombraient plus qu'ils

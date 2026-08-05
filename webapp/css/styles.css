@@ -721,7 +721,13 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
 /* Exactement aux dimensions du rendu : c'est le repère commun du canevas, des
    étiquettes et de l'infobulle. Voir le commentaire de `scene2d`. */
 .globe-scene{position:relative}
-.globe-toile{display:block;cursor:grab;border-radius:var(--r-md);outline-offset:3px}
+/* `pan-y` et non `none` : le doigt qui glisse horizontalement fait tourner le
+   globe, celui qui glisse verticalement fait défiler la page. Tout bloquer
+   piégerait le défilement sur mobile, où le globe occupe une pleine largeur. */
+.globe-toile{
+  display:block;cursor:grab;border-radius:var(--r-md);outline-offset:3px;
+  touch-action:pan-y;
+}
 .globe-box.saisi .globe-toile{cursor:grabbing}
 .globe-box.designe .globe-toile{cursor:pointer}
 .globe-toile:focus-visible{outline:2px solid var(--focus)}
@@ -745,6 +751,21 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
   color:var(--ink);line-height:1.35;transition:opacity var(--t-fast) ease;
 }
 .globe-infobulle.visible{opacity:1}
+
+/* Commandes de zoom, sur le modèle de celles d'une carte Leaflet : le lecteur
+   les reconnaît d'une représentation à l'autre. */
+.globe-zoom{
+  position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:3px;z-index:1;
+}
+.globe-zoom-btn{
+  width:30px;height:30px;padding:0;font:inherit;font-size:16px;line-height:1;
+  cursor:pointer;color:var(--ink-2);background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;
+}
+.globe-zoom-btn:hover:not(:disabled){border-color:var(--border-strong);color:var(--ink)}
+.globe-zoom-btn:disabled{opacity:.4;cursor:default}
+.globe-zoom-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
 /* -- Carte Leaflet ---------------------------------------------------- */
 .map-box{width:100%;height:460px;border-radius:var(--r-md);border:1px solid var(--border);z-index:0}

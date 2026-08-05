@@ -21,6 +21,13 @@ const RAYON = 1;
 const CHAMP = 38;
 const DISTANCE = 3.1;
 
+// Mêmes bornes et mêmes gestes que le globe des flux : les deux se manipulent
+// de la même façon. Voir globe.js pour le raisonnement sur le minimum.
+const ZOOM_MIN = 1.55;
+const ZOOM_MAX = 4.4;
+const SENSIBILITE_ZOOM = 0.0013;
+const CRAN_ZOOM = 1.25;
+
 /** Définition des textures, en projection équirectangulaire. */
 const TEX_L = 2048;
 const TEX_H = 1024;
@@ -241,6 +248,16 @@ export async function globeChoroplethe(hote, geojson, donneesParAnnee, opts) {
   infobulle.setAttribute("aria-hidden", "true");
   scene2d.appendChild(infobulle);
 
+  const zoomUI = document.createElement("div");
+  zoomUI.className = "globe-zoom";
+  zoomUI.innerHTML = `
+    <button type="button" class="globe-zoom-btn" data-zoom="plus" aria-label="Zoomer">+</button>
+    <button type="button" class="globe-zoom-btn" data-zoom="moins" aria-label="Dézoomer">−</button>
+    <button type="button" class="globe-zoom-btn" data-zoom="init" aria-label="Revenir au cadrage initial">⟲</button>`;
+  scene2d.appendChild(zoomUI);
+  const boutonPlus = zoomUI.querySelector('[data-zoom="plus"]');
+  const boutonMoins = zoomUI.querySelector('[data-zoom="moins"]');
+
   const barre = document.createElement("div");
   barre.className = "map-controls";
   barre.innerHTML = `
@@ -266,8 +283,29 @@ export async function globeChoroplethe(hote, geojson, donneesParAnnee, opts) {
   let cote = 1;
   let vivant = true;
   let demande = 0;
+  let distance = DISTANCE;
 
   const borner = (v) => Math.max(-TANGAGE_MAX, Math.min(TANGAGE_MAX, v));
+
+  /**
+   * Règle le zoom.
+   *
+   * L'atmosphère est un simple halo de silhouette : contrairement au globe des
+   * flux, elle n'a pas besoin d'être masquée de près — son rayon de 1,13 tient
+   * dans le champ jusqu'à une distance de 3,3, et au-delà elle sort du cadre
+   * par les bords, ce qui ne se voit pas sur un disque déjà plein écran.
+   */
+  function setDistance(d) {
+    const avant = distance;
+    distance = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, d));
+    if (distance === avant) return;
+    camera.position.z = distance;
+    boutonMoins.disabled = distance >= ZOOM_MAX - 1e-3;
+    boutonPlus.disabled = distance <= ZOOM_MIN + 1e-3;
+    invalider();
+  }
+  boutonMoins.disabled = false;
+  boutonPlus.disabled = false;
 
   // Rendu à la demande : une choroplèthe ne bouge pas toute seule. La boucle
   // continue n'a pas lieu d'être — elle brûlerait une image sur soixante pour
@@ -383,11 +421,28 @@ export async function globeChoroplethe(hote, geojson, donneesParAnnee, opts) {
       ArrowRight: () => { lacet += PAS; },
       ArrowUp: () => { tangage = borner(tangage - PAS); },
       ArrowDown: () => { tangage = borner(tangage + PAS); },
+      "+": () => setDistance(distance / CRAN_ZOOM),
+      "=": () => setDistance(distance / CRAN_ZOOM),
+      "-": () => setDistance(distance * CRAN_ZOOM),
+      Home: () => setDistance(DISTANCE),
     };
     if (!gestes[e.key]) return;
     e.preventDefault();
     gestes[e.key]();
     invalider();
+  });
+  // `passive: false` : sans lui le navigateur refuse le `preventDefault()` et
+  // la page défile sous le curseur pendant qu'on zoome.
+  cible.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    setDistance(distance * Math.exp(e.deltaY * SENSIBILITE_ZOOM));
+  }, { passive: false });
+  zoomUI.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-zoom]");
+    if (!b) return;
+    if (b.dataset.zoom === "plus") setDistance(distance / CRAN_ZOOM);
+    else if (b.dataset.zoom === "moins") setDistance(distance * CRAN_ZOOM);
+    else setDistance(DISTANCE);
   });
 
   // --- Curseur d'année et animation ----------------------------------------
