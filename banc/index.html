@@ -183,11 +183,15 @@ try {
 
   try {
     const { globeChoroplethe } = await import("../webapp/js/globe-choroplethe.js");
-    await globeChoroplethe(document.getElementById("d-choro"), geojson, parAnnee, {
+    const g = await globeChoroplethe(document.getElementById("d-choro"), geojson, parAnnee, {
       annees: ANNEES,
       labelFn: nom,
       fmt: (v) => fmt(v),
     });
+    // Sans WebGL, la fonction renvoie `null` sans lever : dans l'application
+    // c'est le signal de garder Leaflet. Ici, il faut le dire à l'écran, sinon
+    // la section reste vide sans qu'on sache pourquoi.
+    if (!g) throw new Error("WebGL indisponible");
   } catch (e) {
     document.getElementById("d-choro").innerHTML =
       `<div class="empty">Choroplèthe indisponible : ${e.message}</div>`;
