@@ -88,6 +88,41 @@ export function centroides(geojson) {
   return out;
 }
 
+/**
+ * Barycentre géographique d'un ensemble de pays, en degrés.
+ *
+ * Calculé sur les VECTEURS unité et non sur les longitudes : une moyenne
+ * d'angles place le barycentre du Pacifique en plein Sahara dès qu'on franchit
+ * l'antiméridien. Sans objet pour l'UE27, mais la fonction ne doit pas dépendre
+ * de la bonne volonté de son appelant.
+ *
+ * Ce point n'est PAS un lieu où se passerait quelque chose : c'est une commodité
+ * de dessin, à annoncer comme telle partout où il sert à poser un bloc de pays.
+ */
+export function barycentre(isos, centres) {
+  let x = 0;
+  let y = 0;
+  let z = 0;
+  let n = 0;
+  for (const iso of isos) {
+    const c = centres[iso];
+    if (!c) continue;
+    const phi = (c[1] * Math.PI) / 180;
+    const lam = (c[0] * Math.PI) / 180;
+    x += Math.cos(phi) * Math.sin(lam);
+    y += Math.sin(phi);
+    z += Math.cos(phi) * Math.cos(lam);
+    n += 1;
+  }
+  if (!n) return null;
+  const norme = Math.hypot(x, y, z);
+  if (!norme) return null;
+  return {
+    lon: (Math.atan2(x, z) * 180) / Math.PI,
+    lat: (Math.asin(y / norme) * 180) / Math.PI,
+  };
+}
+
 // Cadres de projection : monde entier, ou Europe resserrée.
 export const CADRES = {
   monde: { lon: [-165, 175], lat: [-52, 72] },

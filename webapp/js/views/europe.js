@@ -23,11 +23,11 @@ import {
   renderChips, skeletonKpis, mineralOptions, stadeOptions, multiSelectHTML,
   wireMultiSelect, viewHead, ANNEES, avertirPoidsMultiStades, noteCommerceNonProduction,
 } from "../ui.js";
-import { bulles } from "../bulles.js";
+import { diagrammeFlux } from "../diagramme-flux.js";
 import { barChart, stackedBarChart, stackedBar100 } from "../charts.js";
 import {
-  estUE27, PERIMETRES, clausePerimetre, libellePerimetre,
-  centroides, CADRES, projeter, couronne,
+  estUE27, UE27, PERIMETRES, clausePerimetre, libellePerimetre,
+  centroides, barycentre, CADRES, couronne,
 } from "../geo.js";
 import { paletteStades, jeton, onThemeChange } from "../theme.js";
 import { analyserPoids, noteQualitePoids, SQL_VALEUR_PESEE } from "../qualite.js";
@@ -170,18 +170,27 @@ export async function mount(container, { labels }) {
     };
   }
 
-  // Positions normalisées [0,1] depuis les centroïdes du fond de carte.
+  /**
+   * Positions géographiques (lon, lat) des pays du cadre demandé.
+   *
+   * Les nœuds ne voyagent plus qu'en coordonnées géographiques : le globe s'en
+   * sert directement, et `diagramme-flux.js` les projette pour le diagramme.
+   * C'est ce qui permet de changer de représentation sans que cette vue en
+   * sache quoi que ce soit.
+   *
+   * Un pays hors cadre (l'Australie sur un cadre européen) n'est pas rabattu
+   * sur le bord — il serait posé à une place fausse. Il est écarté et signalé
+   * sous le graphe.
+   */
   async function positions(cadre) {
     const c = centroides(await geo());
-    const proj = projeter(CADRES[cadre], 1, 1);
+    const limites = CADRES[cadre];
     const out = {};
     for (const [iso, lonlat] of Object.entries(c)) {
-      const [x, y] = proj(lonlat);
-      // Un pays hors cadre (l'Australie sur un cadre européen) n'est pas
-      // rabattu sur le bord : il serait posé à une place fausse. Il est écarté
-      // du diagramme et signalé sous le graphe.
-      if (x < 0 || x > 1 || y < 0 || y > 1) continue;
-      out[iso] = [x, y];
+      const [lon, lat] = lonlat;
+      if (lon < limites.lon[0] || lon > limites.lon[1]) continue;
+      if (lat < limites.lat[0] || lat > limites.lat[1]) continue;
+      out[iso] = { lon, lat };
     }
     return out;
   }
@@ -245,15 +254,20 @@ export async function mount(container, { labels }) {
 
     const cBul = card(`Principaux échanges mondiaux : ${ctx.mineral} (${ctx.annee})`, "eu-monde-bul");
     hote.appendChild(cBul);
-    bulles(cBul.querySelector(".card-body"), {
+    diagrammeFlux(cBul.querySelector(".card-body"), {
+      // Le code ISO3 plutôt que le nom complet : à quatorze bulles sur une
+      // carte du monde, les noms se chevauchent. Le nom reste au survol, dans
+      // le tableau équivalent et sous le graphe.
       noeuds: retenus.map((iso) => ({
-        id: iso, label: ctx.nomPays(iso), valeur: parPays.get(iso),
-        x: pos[iso][0], y: pos[iso][1],
+        id: iso, label: iso, titre: ctx.nomPays(iso), valeur: parPays.get(iso),
+        lon: pos[iso].lon, lat: pos[iso].lat,
         couleur: ctx.estDedans(iso) ? ctx.C_PIVOT : ctx.C_IMPORT,
       })),
       liens,
     }, {
       fmt: ctx.disp,
+      cadre: "monde",
+      geojson: await geo(),
       resume: `Les ${retenus.length} premiers exportateurs mondiaux de ${ctx.mineral} en ${ctx.annee}
         et leurs ${liens.length} principaux flux. Les pays du périmètre ${ctx.libPerim} sont en bleu foncé.`,
     });
@@ -397,8 +411,64 @@ export async function mount(container, { labels }) {
       </div>`);
     const hoteBul = document.createElement("div");
     cBul.querySelector(".card-body").appendChild(hoteBul);
-    bulles(hoteBul, { noeuds, liens }, {
+
+    /*
+     * Deux lectures, deux graphes.
+     *
+     * La couronne ci-dessus est SCHÉMATIQUE : origines à gauche, destinations à
+     * droite, l'Union au centre. Un pays à la fois origine et destination y
+     * occupe deux places, ce qui est voulu — c'est le sens des échanges qu'on y
+     * lit, pas la géographie. Elle garde donc son fond vide (`sansFond`).
+     *
+     * Le globe, lui, remet chaque pays à sa place : celui qui est des deux
+     * côtés n'a plus qu'une bulle et porte deux arcs. D'où un second graphe
+     * plutôt qu'une projection du premier.
+     *
+     * Reste que l'Union n'est PAS un lieu. Sur le globe elle est posée au
+     * barycentre de ses membres, ce qui est une commodité de dessin et rien
+     * d'autre : la note sous le graphe le dit, et n'apparaît qu'en mode globe.
+     */
+    const centres = centroides(await geo());
+    const pointUE = barycentre(UE27, centres) || { lon: 10, lat: 50 };
+    const fusion = new Map();
+    const ajouter = (iso, valeur, couleur) => {
+      const deja = fusion.get(iso);
+      if (deja) { deja.valeur = Math.max(deja.valeur, valeur); return; }
+      if (!centres[iso]) return;
+      fusion.set(iso, {
+        id: iso, label: iso, titre: ctx.nomPays(iso), valeur,
+        lon: centres[iso][0], lat: centres[iso][1], couleur,
+      });
+    };
+    for (const [iso, v] of topImp) ajouter(iso, v, ctx.C_IMPORT);
+    for (const [iso, v] of topExp) ajouter(iso, v, ctx.C_EXPORT);
+
+    const grapheGlobe = {
+      noeuds: [
+        { id: "__ue__", label: ctx.libPerim, titre: `${ctx.libPerim} (agrégé)`,
+          valeur: Math.max(totalImp, totalExp),
+          lon: pointUE.lon, lat: pointUE.lat, couleur: ctx.C_PIVOT },
+        ...fusion.values(),
+      ],
+      liens: [
+        ...topImp.filter(([iso]) => centres[iso])
+          .map(([iso, v]) => ({ source: iso, target: "__ue__", valeur: v, couleur: ctx.C_IMPORT })),
+        ...topExp.filter(([iso]) => centres[iso])
+          .map(([iso, v]) => ({ source: "__ue__", target: iso, valeur: v, couleur: ctx.C_EXPORT })),
+      ],
+    };
+
+    diagrammeFlux(hoteBul, { noeuds, liens }, {
       fmt: ctx.disp,
+      cadre: "monde",
+      geojson: await geo(),
+      sansFond: true,
+      grapheGlobe,
+      noteGlobe: `L'<b>${ctx.libPerim}</b> n'est pas un lieu : sur le globe, elle est posée au
+        <b>barycentre géographique de ses États membres</b> (${pointUE.lat.toFixed(1)}° N,
+        ${pointUE.lon.toFixed(1)}° E). C'est une commodité de dessin et non le point où passent
+        les échanges. Un partenaire à la fois origine et destination n'y a qu'une bulle, avec un
+        arc dans chaque sens ; sur le diagramme, il en occupe deux.`,
       resume: `Échanges extra-${ctx.libPerim} de ${ctx.mineral} en ${ctx.annee} : ${topImp.length}
         origines et ${topExp.length} destinations principales. Les flux entre États membres sont exclus.`,
     });
@@ -530,17 +600,22 @@ export async function mount(container, { labels }) {
 
     const cBul = card(`Échanges entre États membres : ${ctx.mineral} (${ctx.annee})`, "eu-intra-bul");
     hote.appendChild(cBul);
-    bulles(cBul.querySelector(".card-body"), {
+    diagrammeFlux(cBul.querySelector(".card-body"), {
       // 27 bulles serrées sur un cadre européen : les noms complets se
       // chevaucheraient. Le code ISO3 est lisible pour ce public, et le nom
       // complet reste au survol, dans le tableau équivalent et sous le graphe.
       noeuds: placables.map(([iso, v]) => ({
         id: iso, label: iso, titre: ctx.nomPays(iso), valeur: v,
-        x: pos[iso][0], y: pos[iso][1], couleur: ctx.C_PIVOT,
+        lon: pos[iso].lon, lat: pos[iso].lat, couleur: ctx.C_PIVOT,
       })),
       liens: fleches,
     }, {
       fmt: ctx.disp,
+      cadre: "europe",
+      geojson: await geo(),
+      // Le globe s'ouvre sur l'Europe, quel que soit le barycentre des
+      // volumes : c'est l'objet même de la section.
+      centre: { lon: 12, lat: 52 },
       resume: `Importations intra-${ctx.libPerim} de ${ctx.mineral} en ${ctx.annee} :
         ${placables.length} États et leurs ${fleches.length} principaux flux. La bulle donne le
         volume importé par chaque État depuis ses partenaires du périmètre.`,

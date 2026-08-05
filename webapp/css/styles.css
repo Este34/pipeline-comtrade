@@ -646,22 +646,126 @@ h1,h2,h3,h4{line-height:1.25;text-wrap:balance}
   border-top:2px solid var(--border-strong);font-weight:700;
 }
 
-/* -- Diagramme à bulles et flèches (vue Europe) ----------------------- */
+/* -- Diagramme de flux : fond, bulles, rubans (vues Europe et Flux) ---- */
 .bulles{display:block;width:100%;height:auto;overflow:visible}
-.bulle{cursor:pointer;transition:filter var(--t-fast) ease}
+.bulle{cursor:pointer;transition:filter var(--t-fast) ease,opacity var(--t-fast) ease}
 .bulle:hover{filter:brightness(1.12)}
+.bulle.estompe{opacity:.22}
 .bulle-txt{font-size:12px;font-weight:700;fill:var(--ink);pointer-events:none}
 .bulle-txt-int{fill:#fff}
 .bulle-val{font-size:10.5px;font-weight:400;fill:var(--ink-muted);pointer-events:none}
 .bulle-val-int{fill:rgba(255,255,255,.85)}
 .bulle-rappel{stroke:var(--border-strong);stroke-width:1;fill:none}
-.fleche{transition:opacity var(--t-fast) ease}
-.fleche.estompe{opacity:.08}
-.fleche.surligne{opacity:1}
 .bulles-groupe{
   font-size:10.5px;font-weight:700;letter-spacing:.08em;
   text-transform:uppercase;fill:var(--ink-muted);
 }
+
+/* Fond de carte : il situe les bulles, il ne se lit pas pour lui-même. D'où
+   une terre à peine plus dense que la mer et un trait filiforme — au premier
+   plan, ce sont les flux qu'on doit voir. */
+.fond-mer{fill:var(--surface-2)}
+.fond-terres{fill:var(--border);stroke:var(--border-strong);stroke-width:.7;stroke-linejoin:round}
+
+/* Tige de rappel : relie une bulle écartée par le relâchement à sa position
+   géographique vraie, marquée d'un point. */
+.tige{stroke:var(--border-strong);stroke-width:1;stroke-dasharray:2 3;transition:opacity var(--t-fast) ease}
+.tige-point{fill:var(--border-strong)}
+.tige.estompe{opacity:.15}
+
+.ruban{transition:opacity var(--t-fast) ease;cursor:pointer}
+.ruban.estompe{opacity:.06}
+.ruban.surligne{opacity:1}
+.ruban-corps{stroke:none}
+/* L'impulsion parcourt la ligne médiane du départ vers l'arrivée. `pathLength`
+   valant 100 sur le chemin, le motif et l'animation s'écrivent en pourcentage
+   de la longueur, quelle que soit la distance réelle entre les deux pays. */
+.ruban-impulsion{
+  stroke-linecap:round;stroke-dasharray:5 95;
+  animation:fluxImpulsion 2.6s linear infinite;
+  opacity:.9;pointer-events:none;
+}
+@keyframes fluxImpulsion{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+
+.legende-flux{
+  margin:10px 0 0;font-size:var(--fs-xs);color:var(--ink-muted);line-height:1.5;
+}
+
+/* Carte géographique repliable, en complément d'un Sankey. Elle n'est
+   construite qu'à l'ouverture : un globe consomme un contexte WebGL. */
+.carte-geo{margin-top:14px}
+.carte-geo>summary{font-weight:600}
+.carte-geo-corps{padding:12px 0 4px}
+
+/* Bascule Globe / Diagramme : deux lectures du même graphe. */
+.bascule-repr{display:flex;gap:4px;justify-content:flex-end;margin-bottom:8px;flex-wrap:wrap}
+.bascule-repr:empty{display:none}
+.bascule-btn{
+  font:inherit;font-size:var(--fs-xs);padding:5px 11px;cursor:pointer;
+  background:var(--surface-2);color:var(--ink-2);
+  border:1px solid var(--border);border-radius:var(--r-full);
+}
+.bascule-btn:hover{border-color:var(--border-strong)}
+.bascule-btn[aria-pressed="true"]{
+  background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700;
+}
+
+/* -- Globe des flux (three.js) ---------------------------------------- */
+/* La boîte est carrée : le rendu l'est aussi, et les étiquettes HTML posées
+   par-dessus peuvent alors se positionner dans le repère du canevas sans
+   correction d'offset. */
+.globe-box{
+  width:100%;aspect-ratio:1;max-height:70vh;
+  margin-inline:auto;display:flex;align-items:center;justify-content:center;
+}
+/* Exactement aux dimensions du rendu : c'est le repère commun du canevas, des
+   étiquettes et de l'infobulle. Voir le commentaire de `scene2d`. */
+.globe-scene{position:relative}
+/* `pan-y` et non `none` : le doigt qui glisse horizontalement fait tourner le
+   globe, celui qui glisse verticalement fait défiler la page. Tout bloquer
+   piégerait le défilement sur mobile, où le globe occupe une pleine largeur. */
+.globe-toile{
+  display:block;cursor:grab;border-radius:var(--r-md);outline-offset:3px;
+  touch-action:pan-y;
+}
+.globe-box.saisi .globe-toile{cursor:grabbing}
+.globe-box.designe .globe-toile{cursor:pointer}
+.globe-toile:focus-visible{outline:2px solid var(--focus)}
+
+.globe-etiquettes{position:absolute;inset:0;pointer-events:none}
+.globe-etiquette{
+  position:absolute;top:0;left:0;white-space:nowrap;
+  font-size:11.5px;font-weight:700;color:var(--ink);
+  /* Liseré de surface : l'étiquette reste lisible au-dessus d'un arc ou d'un
+     semis de points, sans boîte opaque qui masquerait la géographie. */
+  text-shadow:0 0 3px var(--surface),0 0 3px var(--surface),0 0 6px var(--surface);
+  transition:opacity var(--t-fast) ease;
+}
+.globe-etiquette.estompe{opacity:.25}
+
+.globe-infobulle{
+  position:absolute;top:0;left:0;pointer-events:none;opacity:0;
+  transform-origin:0 0;margin:14px 0 0 14px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);
+  box-shadow:var(--shadow-sm);padding:6px 10px;font-size:var(--fs-sm);
+  color:var(--ink);line-height:1.35;transition:opacity var(--t-fast) ease;
+}
+.globe-infobulle.visible{opacity:1}
+
+/* Commandes de zoom, sur le modèle de celles d'une carte Leaflet : le lecteur
+   les reconnaît d'une représentation à l'autre. */
+.globe-zoom{
+  position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:3px;z-index:1;
+}
+.globe-zoom-btn{
+  width:30px;height:30px;padding:0;font:inherit;font-size:16px;line-height:1;
+  cursor:pointer;color:var(--ink-2);background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;
+}
+.globe-zoom-btn:hover:not(:disabled){border-color:var(--border-strong);color:var(--ink)}
+.globe-zoom-btn:disabled{opacity:.4;cursor:default}
+.globe-zoom-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
 /* -- Carte Leaflet ---------------------------------------------------- */
 .map-box{width:100%;height:460px;border-radius:var(--r-md);border:1px solid var(--border);z-index:0}

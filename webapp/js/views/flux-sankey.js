@@ -36,9 +36,21 @@ import {
   sensOptions, viewHead, avertirPoidsMultiStades, noteCommerceNonProduction,
 } from "../ui.js";
 import { sankey } from "../sankey.js";
+import { diagrammeFlux } from "../diagramme-flux.js";
+import { centroides } from "../geo.js";
 import { barChart } from "../charts.js";
 import { paletteViz, paletteStades, jeton, onThemeChange } from "../theme.js";
 import { analyserPoids, noteQualitePoids, SQL_VALEUR_PESEE } from "../qualite.js";
+
+/**
+ * Nombre de partenaires portés sur la carte géographique.
+ *
+ * Le Sankey en montre davantage : il empile, la carte disperse. Au-delà d'une
+ * douzaine de bulles autour d'un pivot, les arcs se croisent au point qu'on ne
+ * suit plus aucun. Le reste demeure dans le tableau et dans le CSV, et la carte
+ * dit combien elle laisse de côté.
+ */
+const NB_PARTENAIRES_CARTE = 12;
 
 const AUTRES = "__autres__";
 const AUTRES_MIN = "__autres_min__";
@@ -493,10 +505,121 @@ export async function mount(container, { labels }) {
       NEUTRE, disp, fmt, nomPays,
       etapeStade, etapeForme, etapeCode, etapeMineral, etapePays,
       portee: iso3 === MONDE ? null : iso3,
+      // Trois rôles seulement sur la carte — entrant, sortant, pivot — donc
+      // trois teintes de la palette validée, les mêmes que dans la vue Europe
+      // pour que les deux cartes se lisent de la même façon.
+      C_IMPORT: jeton("--viz-1", "#2a78d6"),
+      C_EXPORT: jeton("--viz-2", "#eb6834"),
+      C_PIVOT: jeton("--accent", "#000091"),
     };
   }
 
   // --- Rendu commun aux sections à diagramme -----------------------------
+  /*
+   * Carte géographique des flux, en complément du Sankey.
+   *
+   * Ce n'est PAS une bascule : un Sankey décompose par stade de transformation,
+   * une carte montre d'où et vers où. Les deux répondent à des questions
+   * différentes et l'une ne remplace pas l'autre — d'où une carte en plus, et
+   * non un bouton qui masquerait le diagramme.
+   *
+   * Elle est repliée par défaut et n'est CONSTRUITE qu'à la première ouverture.
+   * Un globe consomme un contexte WebGL, ressource dont le navigateur n'accorde
+   * qu'une poignée d'exemplaires, et three.js pèse 185 Ko compressés : ni l'un
+   * ni l'autre ne doit être dépensé pour une carte que personne ne déplie.
+   */
+  let _geo = null;
+  const geo = async () => (_geo ??= await (await fetch("vendor/world.geo.json")).json());
+
+  function carteGeographie(hote, ctx, { pivot, entrants, sortants, titre }) {
+    const bloc = document.createElement("details");
+    bloc.className = "panier carte-geo";
+    bloc.innerHTML = `<summary>${titre}</summary><div class="carte-geo-corps"></div>`;
+    hote.appendChild(bloc);
+
+    let construit = false;
+    bloc.addEventListener("toggle", async () => {
+      if (!bloc.open || construit) return;
+      construit = true;
+      const corps = bloc.querySelector(".carte-geo-corps");
+      corps.innerHTML = `<div class="loading">Chargement de la carte…</div>`;
+
+      const geojson = await geo();
+      const centres = centroides(geojson);
+      const garder = (m) => [...m.entries()]
+        .filter(([iso, v]) => v > 0 && centres[iso])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, NB_PARTENAIRES_CARTE);
+
+      const dedans = garder(entrants || new Map());
+      const dehors = garder(sortants || new Map());
+      const vus = new Map();
+      const noeuds = [];
+      const ajouter = (iso, valeur, couleur) => {
+        const deja = vus.get(iso);
+        // Un même pays peut être à la fois origine et destination : il ne
+        // reçoit qu'une bulle, dimensionnée sur le plus gros des deux flux.
+        if (deja) { deja.valeur = Math.max(deja.valeur, valeur); return; }
+        const n = {
+          id: iso, label: iso, titre: ctx.nomPays(iso), valeur,
+          lon: centres[iso][0], lat: centres[iso][1], couleur,
+        };
+        vus.set(iso, n);
+        noeuds.push(n);
+      };
+      for (const [iso, v] of dedans) ajouter(iso, v, ctx.C_IMPORT);
+      for (const [iso, v] of dehors) ajouter(iso, v, ctx.C_EXPORT);
+
+      const liens = [];
+      if (pivot && centres[pivot]) {
+        const totalPivot = Math.max(
+          dedans.reduce((s, [, v]) => s + v, 0),
+          dehors.reduce((s, [, v]) => s + v, 0),
+        );
+        vus.delete(pivot);
+        const sansPivot = noeuds.filter((n) => n.id !== pivot);
+        noeuds.length = 0;
+        noeuds.push({
+          id: pivot, label: pivot, titre: ctx.nomPays(pivot), valeur: totalPivot,
+          lon: centres[pivot][0], lat: centres[pivot][1], couleur: ctx.C_PIVOT,
+        }, ...sansPivot);
+        for (const [iso, v] of dedans) if (iso !== pivot) liens.push({ source: iso, target: pivot, valeur: v, couleur: ctx.C_IMPORT });
+        for (const [iso, v] of dehors) if (iso !== pivot) liens.push({ source: pivot, target: iso, valeur: v, couleur: ctx.C_EXPORT });
+      }
+
+      corps.innerHTML = "";
+      if (!noeuds.length) {
+        corps.innerHTML = `<div class="empty">Aucun partenaire plaçable sur le fond de carte.</div>`;
+        return;
+      }
+      const hoteCarte = document.createElement("div");
+      corps.appendChild(hoteCarte);
+      diagrammeFlux(hoteCarte, { noeuds, liens }, {
+        fmt: ctx.disp,
+        cadre: "monde",
+        geojson,
+        centre: pivot && centres[pivot]
+          ? { lon: centres[pivot][0], lat: centres[pivot][1] }
+          : undefined,
+        resume: `${titre} : ${noeuds.length} pays, ${liens.length} flux.`,
+      });
+
+      const totalPartenaires = new Set([
+        ...(entrants ? entrants.keys() : []),
+        ...(sortants ? sortants.keys() : []),
+      ]).size;
+      const montres = noeuds.length - (pivot && centres[pivot] ? 1 : 0);
+      if (totalPartenaires > montres) {
+        corps.insertAdjacentHTML("beforeend",
+          `<div class="note methodo" style="margin-top:10px">Carte limitée aux
+           <b>${montres} premiers partenaires</b> sur ${totalPartenaires} : au-delà, les flux se
+           croisent au point de n'être plus suivis. Les autres restent dans le tableau et dans
+           l'export CSV. Les pays sans polygone propre sur le fond de carte n'y figurent pas
+           non plus.</div>`);
+      }
+    });
+  }
+
   function afficher(hote, ctx, { kpis, titre, graphe, entetes, lignes, colonnes, fichier, legende, apres }) {
     hote.innerHTML = "";
     const kpiWrap = document.createElement("div");
@@ -606,6 +729,16 @@ export async function mount(container, { labels }) {
       titre: `${ctx.nomPays(ctx.portee)} : importations et exportations, ${ctx.cible} (${ctx.annee})`,
       graphe,
       entetes: ["Importations (origines)", ctx.nomPays(ctx.portee), "Exportations (destinations)"],
+      apres: (h) => {
+        const parDestination = new Map();
+        for (const r of exports) cumul(parDestination, r.autre, r[ctx.metric] || 0);
+        carteGeographie(h, ctx, {
+          pivot: ctx.portee,
+          entrants: parOrigine,
+          sortants: parDestination,
+          titre: `Géographie des flux — ${ctx.nomPays(ctx.portee)}`,
+        });
+      },
       lignes: lignes.map((r) => ({
         sens: r.flowCode === "M" ? "Importation" : "Exportation",
         partenaire: ctx.nomPays(r.autre), stade: stadeLabel(labels, r.stade), mesure: r[ctx.metric] || 0,
@@ -689,6 +822,22 @@ export async function mount(container, { labels }) {
     hote.appendChild(cBar);
     barChart(cBar.querySelector(".card-body"), top.map(([k]) => ctx.nomPays(k)),
       top.map(([, v]) => v), ctx.metric === "poids" ? "Poids" : "Valeur", ctx.fmt);
+
+    /*
+     * Le sens des flèches dépend du sens analysé : à l'import, les partenaires
+     * alimentent le pays ; à l'export, c'est lui qui les alimente. Sans pays
+     * choisi — lecture mondiale — il n'y a pas de pivot, donc pas de flèche :
+     * la carte se réduit alors aux bulles, ce qui répond quand même à « d'où
+     * vient cette matière ».
+     */
+    carteGeographie(hote, ctx, {
+      pivot: portee,
+      entrants: estImport ? parPartenaire : null,
+      sortants: estImport ? null : parPartenaire,
+      titre: portee
+        ? `Géographie des ${motPartenaire}s — ${ctx.nomPays(portee)}`
+        : `Géographie des ${motPartenaire}s dans le monde`,
+    });
 
     const cTable = card(`${motPartenaires}, part et miroir des déclarations`, "fx-origine-table");
     hote.appendChild(cTable);

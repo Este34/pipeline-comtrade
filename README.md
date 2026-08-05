@@ -267,6 +267,9 @@ Fonctionnalités clés :
   clic pays. Le **fond de carte tuilé est chargé en ligne** (habillage
   uniquement) ; **les données restent 100 % offline** (DuckDB-WASM). Sans réseau,
   les pays colorés s'affichent quand même, sans le fond.
+- **Deux représentations des flux** : un diagramme SVG et un globe 3D, entre
+  lesquels une bascule laisse le choix. Voir plus bas — c'est le point où les
+  deux ne disent pas la même chose.
 - **Minéraux critiques** : 207 codes HS6 sur 27 minéraux, couvrant les quatre
   stades de la chaîne (voir ci-dessous), avec **filtre par stade**, **recherche
   par code HS6** et **composition du périmètre** affichée — la liste exacte des
@@ -337,6 +340,87 @@ Rappel qui vaut pour les cinq angles : les douanes classent par **produit**, pas
 par teneur. Un tonnage de batteries n'est pas un tonnage de lithium, et aucune
 colonne du jeu de données ne permet de le convertir.
 
+### Représenter des flux : un diagramme, un globe, et où chacun gagne
+
+Un même graphe `{noeuds, liens}` alimente deux représentations. `bulles.js` le
+dessine à plat sur un fond de côtes ; `globe.js` le pose sur une sphère.
+`diagramme-flux.js` porte la bascule, mémorise le choix et **retombe
+silencieusement sur le diagramme** si WebGL manque.
+
+Le partage n'est pas une question de goût :
+
+- le **globe** gagne sur les flux longs. Un trajet Chili → Chine y est un arc
+  court passant par le Pacifique, là où une carte plate le fait traverser trois
+  fois le dessin. C'est la représentation par défaut des vues de flux ;
+- le **plan** gagne sur les comparaisons. Il montre tous les pays d'un coup,
+  ce qu'un globe ne fera jamais. C'est pourquoi la choroplèthe de « Cartes &
+  séries » garde **Leaflet par défaut**, le globe n'y étant qu'une seconde
+  lecture ;
+- « L'Union face au monde » porte **deux graphes pour une même section**. Sa
+  couronne est schématique — origines à gauche, destinations à droite, l'Union
+  au centre — et un pays présent des deux côtés y occupe deux places, ce qui est
+  voulu : on y lit le sens des échanges, pas la géographie. Elle garde donc son
+  fond vide. Le globe, lui, remet chaque pays à sa place : celui qui est des deux
+  côtés n'a plus qu'une bulle et porte deux arcs. D'où `grapheGlobe`, un second
+  graphe plutôt qu'une projection du premier.
+
+  L'Union n'y est pourtant pas un lieu. Elle est posée au **barycentre de ses
+  États membres**, ce qui est une commodité de dessin et rien d'autre. Une note
+  le dit sous le graphe, et n'apparaît qu'en mode globe.
+
+Le globe se **zoome** — molette, boutons `+` / `−` / `⟲`, touches `+` et `−` au
+clavier —, entre une distance de caméra de 4,4 et de 1,55. En deçà, la
+perspective devient si rasante que la sphère se lit comme un mur et que les arcs
+partent hors cadre. Zoomer déplace la caméra, donc l'atmosphère se masque quand
+elle ne tient plus dans le champ, la taille des points du semis suit, et le
+rayon d'écran des bulles est obtenu **par projection** — une taille figée
+laissait les étiquettes retomber sur les disques et gardait une cible de survol
+calibrée pour une vue lointaine.
+
+Le sens d'un flux se lit dans la **forme** et non dans une pointe de flèche : le
+ruban part large de l'origine et s'affine vers la destination, en gagnant en
+densité ce qu'il perd en largeur. Vingt-deux triangles encombraient plus qu'ils
+n'informaient.
+
+Deux calibrages sont **mesurés** et non réglés à l'œil, faute de quoi un cadre
+européen devient une tache : la taille maximale d'une bulle suit l'écart médian
+entre pays voisins, et l'altitude d'un arc a un plancher lié au rayon des bulles
+qu'il relie — sans quoi un flux entre deux voisins reste enfoui sous elles.
+
+### Piège WebGL : le mélange additif est invisible sur fond clair
+
+Le mélange additif fait rougeoyer des arcs sur un globe sombre ; sur fond blanc,
+ajouter de la couleur à du blanc ne change rien. Seuls les arcs débordant de la
+silhouette du globe, sur le fond transparent du canevas, restaient visibles — de
+sorte que la vue mondiale paraissait correcte tandis que les échanges
+intra-européens avaient purement disparu. Les arcs sont en mélange normal, et
+l'impulsion animée éclaircit vers le blanc au lieu d'ajouter de la lumière.
+
+Deux autres pièges du même genre, tous silencieux :
+
+- l'origine des UV d'une `SphereGeometry` tombe sur le méridien 180 alors qu'une
+  texture équirectangulaire commence à −180 : sans quart de tour, l'Amérique se
+  retrouve à la place de l'Asie sur une sphère par ailleurs parfaitement peinte ;
+- les identifiants des `clipPath`, filtres et dégradés SVG sont résolus dans le
+  **document entier**, pas dans le SVG qui les porte. La vue Europe affichant
+  trois diagrammes, les deux derniers empruntaient le cadre de découpe du
+  premier et se retrouvaient tranchés. Chaque instance préfixe désormais ses
+  identifiants.
+
+### Poids : three.js n'entre jamais dans le chargement initial
+
+three.js est vendorisé (`webapp/vendor/three/`, 733 Ko bruts, **185 Ko gzip**,
+deux fichiers — voir le README du dossier) et **importé dynamiquement dans la
+fonction** qui en a besoin. Aucun des huit onglets ne le télécharge tant qu'un
+globe n'est pas affiché ; dans la vue Flux, la carte est même repliée et n'est
+construite qu'à la première ouverture.
+
+La règle se vérifie sur le graphe d'imports statiques depuis `js/main.js` : ni
+`js/globe.js`, ni `js/globe-choroplethe.js`, ni three ne doivent y figurer. Le
+chargement initial pèse **24 modules, 307 Ko non compressés**. La régression est
+facile — il suffit d'importer statiquement une fonction de purge depuis le
+module du globe, ce qui est arrivé une fois.
+
 ### Piège Leaflet : vider le conteneur ne détruit pas la carte
 
 `host.innerHTML = ""` détache le DOM mais laisse vivre l'instance Leaflet, ses
@@ -351,6 +435,13 @@ fenêtre de navigation privée, repartant d'une session vierge, paraissait saine
 d'onglet ; le minuteur s'arrête aussi de lui-même si son conteneur a été
 détaché. Vérifié en instrumentant `setInterval` : le compte reste à 1 carte et
 1 minuteur après trois relances consécutives avec animation active.
+
+Un globe pose le même problème **en pire** : un contexte WebGL est une ressource
+que le navigateur n'accorde qu'à une poignée d'exemplaires, et une fois le quota
+épuisé les globes suivants échouent silencieusement en retombant sur le
+diagramme. `diagramme-flux.js` expose `purgerAffichages()` sur le même modèle —
+appelée depuis `main.js`, et volontairement portée par la bascule plutôt que par
+`globe.js`, pour que ce dernier reste hors du chargement initial.
 
 ### Piège hors-ligne : l'extension parquet de DuckDB
 
@@ -391,6 +482,27 @@ python -m http.server 8000                    # depuis la RACINE du dépôt
 En développement, `webapp/data/parquet` est une **jonction** vers `data/parquet`
 (voir ci-dessous). Le binaire `webapp/vendor/duckdb-wasm/duckdb-eh.wasm` (~35 Mo)
 n'est pas commité : voir `webapp/vendor/duckdb-wasm/README.md` pour le récupérer.
+
+### Banc d'essai des représentations (`banc/`)
+
+Ni les Parquet ni le moteur DuckDB-WASM ne sont dans le dépôt : sur une machine
+neuve, **aucune vue ne peut être ouverte**, et donc aucun rendu vérifié avant
+déploiement. `banc/index.html` contourne cela en alimentant `bulles()`,
+`globe()`, la bascule et la choroplèthe avec un graphe de **fixtures** — codes
+ISO3 et centroïdes réels, valeurs inventées et annoncées comme telles à l'écran.
+
+```bash
+python -m http.server 8123    # depuis la RACINE du dépôt, pas depuis webapp/
+# puis ouvrir http://localhost:8123/banc/
+```
+
+Le dossier vit à la racine, donc **hors de `outputDirectory: webapp`** : il n'est
+jamais déployé, sans avoir besoin d'une règle d'exclusion. Il a payé son écriture
+dès la première séance — cinq défauts n'ont été trouvés qu'en regardant le rendu,
+et aucun n'émettait la moindre erreur (voir les pièges ci-dessus).
+
+La liaison aux données réelles, elle, ne se vérifie que sur une **préversion
+Vercel**, le build y récupérant l'archive.
 
 ### Déploiement sur Vercel
 
@@ -481,7 +593,7 @@ deploy/                  # Déploiement Vercel
 webapp/                  # Phase 3, application d'analyse offline (DSFR)
 ├── index.html          # Coquille + onglets
 ├── css/, assets/         # Styles DSFR + police Marianne
-├── vendor/               # DuckDB-WASM, Chart.js, apache-arrow, fond de carte
+├── vendor/               # DuckDB-WASM, Chart.js, apache-arrow, three.js, fond de carte
 ├── js/                    # db.js (DuckDB-WASM), charts, sankey, format, labels + views/
 └── data/                   # reference/*.json (FR) + parquet/ (jonction/copie)
 data/
