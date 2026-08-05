@@ -26,8 +26,8 @@ import {
 import { diagrammeFlux } from "../diagramme-flux.js";
 import { barChart, stackedBarChart, stackedBar100 } from "../charts.js";
 import {
-  estUE27, PERIMETRES, clausePerimetre, libellePerimetre,
-  centroides, CADRES, couronne,
+  estUE27, UE27, PERIMETRES, clausePerimetre, libellePerimetre,
+  centroides, barycentre, CADRES, couronne,
 } from "../geo.js";
 import { paletteStades, jeton, onThemeChange } from "../theme.js";
 import { analyserPoids, noteQualitePoids, SQL_VALEUR_PESEE } from "../qualite.js";
@@ -411,12 +411,64 @@ export async function mount(container, { labels }) {
       </div>`);
     const hoteBul = document.createElement("div");
     cBul.querySelector(".card-body").appendChild(hoteBul);
-    // Ni fond de carte ni globe ici : la disposition en couronne est
-    // délibérément non géographique — l'UE agrégée n'est pas un point sur la
-    // carte, et l'y poser serait un mensonge. Elle profite en revanche des
-    // nouveaux rubans.
+
+    /*
+     * Deux lectures, deux graphes.
+     *
+     * La couronne ci-dessus est SCHÉMATIQUE : origines à gauche, destinations à
+     * droite, l'Union au centre. Un pays à la fois origine et destination y
+     * occupe deux places, ce qui est voulu — c'est le sens des échanges qu'on y
+     * lit, pas la géographie. Elle garde donc son fond vide (`sansFond`).
+     *
+     * Le globe, lui, remet chaque pays à sa place : celui qui est des deux
+     * côtés n'a plus qu'une bulle et porte deux arcs. D'où un second graphe
+     * plutôt qu'une projection du premier.
+     *
+     * Reste que l'Union n'est PAS un lieu. Sur le globe elle est posée au
+     * barycentre de ses membres, ce qui est une commodité de dessin et rien
+     * d'autre : la note sous le graphe le dit, et n'apparaît qu'en mode globe.
+     */
+    const centres = centroides(await geo());
+    const pointUE = barycentre(UE27, centres) || { lon: 10, lat: 50 };
+    const fusion = new Map();
+    const ajouter = (iso, valeur, couleur) => {
+      const deja = fusion.get(iso);
+      if (deja) { deja.valeur = Math.max(deja.valeur, valeur); return; }
+      if (!centres[iso]) return;
+      fusion.set(iso, {
+        id: iso, label: iso, titre: ctx.nomPays(iso), valeur,
+        lon: centres[iso][0], lat: centres[iso][1], couleur,
+      });
+    };
+    for (const [iso, v] of topImp) ajouter(iso, v, ctx.C_IMPORT);
+    for (const [iso, v] of topExp) ajouter(iso, v, ctx.C_EXPORT);
+
+    const grapheGlobe = {
+      noeuds: [
+        { id: "__ue__", label: ctx.libPerim, titre: `${ctx.libPerim} (agrégé)`,
+          valeur: Math.max(totalImp, totalExp),
+          lon: pointUE.lon, lat: pointUE.lat, couleur: ctx.C_PIVOT },
+        ...fusion.values(),
+      ],
+      liens: [
+        ...topImp.filter(([iso]) => centres[iso])
+          .map(([iso, v]) => ({ source: iso, target: "__ue__", valeur: v, couleur: ctx.C_IMPORT })),
+        ...topExp.filter(([iso]) => centres[iso])
+          .map(([iso, v]) => ({ source: "__ue__", target: iso, valeur: v, couleur: ctx.C_EXPORT })),
+      ],
+    };
+
     diagrammeFlux(hoteBul, { noeuds, liens }, {
       fmt: ctx.disp,
+      cadre: "monde",
+      geojson: await geo(),
+      sansFond: true,
+      grapheGlobe,
+      noteGlobe: `L'<b>${ctx.libPerim}</b> n'est pas un lieu : sur le globe, elle est posée au
+        <b>barycentre géographique de ses États membres</b> (${pointUE.lat.toFixed(1)}° N,
+        ${pointUE.lon.toFixed(1)}° E). C'est une commodité de dessin et non le point où passent
+        les échanges. Un partenaire à la fois origine et destination n'y a qu'une bulle, avec un
+        arc dans chaque sens ; sur le diagramme, il en occupe deux.`,
       resume: `Échanges extra-${ctx.libPerim} de ${ctx.mineral} en ${ctx.annee} : ${topImp.length}
         origines et ${topExp.length} destinations principales. Les flux entre États membres sont exclus.`,
     });

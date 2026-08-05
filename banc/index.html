@@ -91,10 +91,18 @@
   <div class="chart-card"><div class="card-body"><div id="d-choro" style="max-width:620px;margin-inline:auto"></div></div></div>
 </section>
 
+<section class="banc-sec">
+  <h2>7. Couronne et globe — deux graphes pour une même section</h2>
+  <p>Ce que fait « L'Union face au monde » : en diagramme, une couronne schématique sans fond de
+     carte, où un pays des deux côtés occupe deux places ; en globe, chaque pays à sa position,
+     avec un arc dans chaque sens. La note ne doit apparaître qu'en mode globe.</p>
+  <div class="chart-card"><div class="card-body"><div id="d-couronne"></div></div></div>
+</section>
+
 <script type="module">
 import { bulles } from "../webapp/js/bulles.js";
 import { diagrammeFlux } from "../webapp/js/diagramme-flux.js";
-import { centroides, projeter, CADRES } from "../webapp/js/geo.js";
+import { centroides, projeter, barycentre, couronne, UE27, CADRES } from "../webapp/js/geo.js";
 import { jeton, wireThemeToggle } from "../webapp/js/theme.js";
 import { EXPORTATEURS, FLUX, MEMBRES, FLUX_INTRA, graphe, fmt, nom } from "./fixtures.js";
 
@@ -197,6 +205,58 @@ try {
       `<div class="empty">Choroplèthe indisponible : ${e.message}</div>`;
     console.error(e);
   }
+}
+
+// --- Couronne schématique + globe géographique ----------------------------
+{
+  const IMP = [["CHL", 9800], ["PER", 7100], ["COD", 4400], ["ZMB", 2600], ["USA", 1900]];
+  const EXP = [["CHN", 5200], ["USA", 3100], ["MEX", 900]];
+  const posImp = couronne(IMP.length, { cx: 0.5, cy: 0.5, rx: 0.42, ry: 0.44, depart: 120, etendue: 120 });
+  const posExp = couronne(EXP.length, { cx: 0.5, cy: 0.5, rx: 0.42, ry: 0.44, depart: -60, etendue: 120 });
+  const C_IMP = jeton("--viz-1");
+  const C_EXP = jeton("--viz-2");
+  const C_UE = jeton("--accent");
+
+  // Couronne : les États-Unis sont des DEUX côtés, donc deux places distinctes.
+  const noeuds = [
+    { id: "__ue__", label: "UE27", valeur: 25000, x: 0.5, y: 0.5, couleur: C_UE, fixe: true },
+    ...IMP.map(([iso, v], i) => ({ id: `i:${iso}`, label: nom(iso), valeur: v, x: posImp[i][0], y: posImp[i][1], couleur: C_IMP })),
+    ...EXP.map(([iso, v], i) => ({ id: `e:${iso}`, label: nom(iso), valeur: v, x: posExp[i][0], y: posExp[i][1], couleur: C_EXP })),
+  ];
+  const liens = [
+    ...IMP.map(([iso, v]) => ({ source: `i:${iso}`, target: "__ue__", valeur: v, couleur: C_IMP })),
+    ...EXP.map(([iso, v]) => ({ source: "__ue__", target: `e:${iso}`, valeur: v, couleur: C_EXP })),
+  ];
+
+  // Globe : un pays, une bulle, quel que soit le nombre de sens.
+  const pointUE = barycentre(UE27, centres) || { lon: 10, lat: 50 };
+  const fusion = new Map();
+  const poser = (iso, v, couleur) => {
+    const deja = fusion.get(iso);
+    if (deja) { deja.valeur = Math.max(deja.valeur, v); return; }
+    if (!centres[iso]) return;
+    fusion.set(iso, { id: iso, label: iso, titre: nom(iso), valeur: v, lon: centres[iso][0], lat: centres[iso][1], couleur });
+  };
+  for (const [iso, v] of IMP) poser(iso, v, C_IMP);
+  for (const [iso, v] of EXP) poser(iso, v, C_EXP);
+
+  diagrammeFlux(document.getElementById("d-couronne"), { noeuds, liens }, {
+    fmt, geojson, cadre: "monde", sansFond: true,
+    grapheGlobe: {
+      noeuds: [
+        { id: "__ue__", label: "UE27", titre: "UE27 (agrégé)", valeur: 25000,
+          lon: pointUE.lon, lat: pointUE.lat, couleur: C_UE },
+        ...fusion.values(),
+      ],
+      liens: [
+        ...IMP.filter(([iso]) => centres[iso]).map(([iso, v]) => ({ source: iso, target: "__ue__", valeur: v, couleur: C_IMP })),
+        ...EXP.filter(([iso]) => centres[iso]).map(([iso, v]) => ({ source: "__ue__", target: iso, valeur: v, couleur: C_EXP })),
+      ],
+    },
+    noteGlobe: `L'<b>UE27</b> n'est pas un lieu : elle est posée au barycentre de ses membres
+      (${pointUE.lat.toFixed(1)}° N, ${pointUE.lon.toFixed(1)}° E). Valeurs inventées.`,
+    resume: "Couronne et globe (valeurs inventées).",
+  });
 }
 </script>
 </body>

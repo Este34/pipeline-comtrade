@@ -356,9 +356,17 @@ Le partage n'est pas une question de goût :
   ce qu'un globe ne fera jamais. C'est pourquoi la choroplèthe de « Cartes &
   séries » garde **Leaflet par défaut**, le globe n'y étant qu'une seconde
   lecture ;
-- la vue Europe garde une section **sans aucune carte** : la disposition en
-  couronne de « l'Union face au monde » est délibérément non géographique —
-  l'UE agrégée n'est pas un point, et l'y poser serait un mensonge.
+- « L'Union face au monde » porte **deux graphes pour une même section**. Sa
+  couronne est schématique — origines à gauche, destinations à droite, l'Union
+  au centre — et un pays présent des deux côtés y occupe deux places, ce qui est
+  voulu : on y lit le sens des échanges, pas la géographie. Elle garde donc son
+  fond vide. Le globe, lui, remet chaque pays à sa place : celui qui est des deux
+  côtés n'a plus qu'une bulle et porte deux arcs. D'où `grapheGlobe`, un second
+  graphe plutôt qu'une projection du premier.
+
+  L'Union n'y est pourtant pas un lieu. Elle est posée au **barycentre de ses
+  États membres**, ce qui est une commodité de dessin et rien d'autre. Une note
+  le dit sous le graphe, et n'apparaît qu'en mode globe.
 
 Le globe se **zoome** — molette, boutons `+` / `−` / `⟲`, touches `+` et `−` au
 clavier —, entre une distance de caméra de 4,4 et de 1,55. En deçà, la

@@ -65,9 +65,19 @@ export function purgerAffichages({ toutes = false } = {}) {
  *   le diagramme, de sorte qu'une vue n'ait plus à savoir laquelle des deux
  *   représentations attend quoi.
  * @param {{fmt, resume?, geojson, cadre?: "monde"|"europe",
- *          centre?: {lon,lat}, onClick?, sansGlobe?: boolean}} opts
- *   `cadre` absent ⇒ pas de fond de carte ni de globe : c'est le cas de la
- *   disposition en couronne, qui n'a pas de géographie.
+ *          centre?: {lon,lat}, onClick?, sansGlobe?: boolean, sansFond?: boolean,
+ *          grapheGlobe?: object, noteGlobe?: string}} opts
+ *   `cadre` absent ⇒ pas de fond de carte ni de globe : c'est le cas d'une
+ *   disposition purement schématique.
+ *
+ *   `sansFond` garde le globe mais retire le fond de carte du diagramme : une
+ *   disposition en couronne n'est pas géographique, et poser des côtes derrière
+ *   elle donnerait à ses positions un sens qu'elles n'ont pas.
+ *
+ *   `grapheGlobe` remplace le graphe en mode globe. Les deux lectures ne sont
+ *   pas toujours le même graphe : sur la couronne, un pays à la fois origine et
+ *   destination occupe deux places, alors qu'à sa position géographique il n'en
+ *   a qu'une et porte deux flèches.
  */
 export function diagrammeFlux(hote, graphe, opts) {
   const { cadre, geojson, sansGlobe } = opts;
@@ -126,7 +136,9 @@ function rendreDiagramme(etat) {
   bulles(etat.corps, { noeuds, liens: etat.graphe.liens }, {
     fmt: etat.opts.fmt,
     resume: etat.opts.resume,
-    fond: cadre && geojson ? { geojson, projeter: proj, cadre: CADRES[cadre] } : undefined,
+    fond: cadre && geojson && !etat.opts.sansFond
+      ? { geojson, projeter: proj, cadre: CADRES[cadre] }
+      : undefined,
   });
 }
 
@@ -142,9 +154,14 @@ async function rendre(etat) {
 
   try {
     const { globe } = await import("./globe.js");
-    const instance = await globe(etat.corps, etat.graphe, etat.opts);
+    const instance = await globe(etat.corps, etat.opts.grapheGlobe || etat.graphe, etat.opts);
     if (!instance) throw new Error("WebGL indisponible");
     etat.instanceGlobe = instance;
+    // Une note qui n'a de sens qu'en mode globe : elle disparaît donc avec lui.
+    if (etat.opts.noteGlobe) {
+      etat.corps.insertAdjacentHTML("beforeend",
+        `<div class="note methodo" style="margin-top:10px">${etat.opts.noteGlobe}</div>`);
+    }
   } catch (e) {
     // Repli silencieux : le diagramme dit la même chose, et la bascule
     // disparaît puisqu'elle n'a plus qu'une option.
