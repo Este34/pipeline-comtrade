@@ -28,7 +28,6 @@ SCRAPER_DIR = Path(__file__).resolve().parent.parent / "scraper"
 sys.path.insert(0, str(SCRAPER_DIR))
 
 import config  # noqa: E402
-
 import enrich  # noqa: E402
 
 # Colonnes enrichies ajoutées au détail (reporter + partner).

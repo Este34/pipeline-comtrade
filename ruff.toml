@@ -1,0 +1,27 @@
+# Configuration Ruff — linter + formateur Python (https://docs.astral.sh/ruff/)
+# Lancer :  python -m ruff check .        (analyse)
+#           python -m ruff check . --fix  (corrige automatiquement)
+#           python -m ruff format .       (formate le code)
+
+# Longueur de ligne alignée sur le style actuel du projet.
+line-length = 100
+target-version = "py311"
+
+exclude = ["__pycache__", ".venv", "venv", "build", "dist"]
+
+[lint]
+# E/W = style PEP8, F = erreurs (imports inutilisés, variables non définies),
+# I = tri des imports, UP = modernisation syntaxe, B = bugs courants.
+select = ["E", "W", "F", "I", "UP", "B"]
+ignore = ["E501"]  # longueur de ligne : gérée par le formateur
+
+[format]
+quote-style = "double"
+indent-style = "space"
+
+[lint.isort]
+# `config`, `reference_data` et `enrich` sont des modules LOCAUX du dépôt,
+# chargés via sys.path.insert et non installés. Sans cette déclaration, ruff
+# les prendrait pour des paquets tiers et les mélangerait à pandas/duckdb,
+# ce qui effacerait le regroupement voulu par l'auteur.
+known-first-party = ["config", "reference_data", "enrich"]

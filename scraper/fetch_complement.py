@@ -61,7 +61,7 @@ def codes_manquants() -> list[str]:
 def charger_checkpoint() -> dict:
     if not CHECKPOINT.exists():
         return {}
-    with open(CHECKPOINT, "r", encoding="utf-8") as f:
+    with open(CHECKPOINT, encoding="utf-8") as f:
         return json.load(f)
 
 

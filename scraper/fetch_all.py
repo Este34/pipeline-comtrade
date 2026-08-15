@@ -34,7 +34,7 @@ def maintenant():
 def charger_json(chemin, defaut):
     if not chemin.exists():
         return defaut
-    with open(chemin, "r", encoding="utf-8") as f:
+    with open(chemin, encoding="utf-8") as f:
         return json.load(f)
 
 

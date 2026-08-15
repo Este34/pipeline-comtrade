@@ -16,7 +16,7 @@
 // sur les mêmes déclarations d'importation, ce qui la rend vérifiable — un KPI
 // l'affiche explicitement en section 3.
 import { query, srcCritical, srcCriticalAgg, clauseCodes, caseCodes } from "../db.js";
-import { fmtMetric, axisFmt, pct, downloadCsv } from "../format.js";
+import { fmtMetric, axisFmt, pct, downloadCsv, esc } from "../format.js";
 import { pays, stades, stadeLabel, codesPour, mineraux } from "../labels.js";
 import {
   selectHTML, anneeOptions, metricOptions, ctrl, kpisHTML, renderTable, card,
@@ -195,7 +195,9 @@ export async function mount(container, { labels }) {
     return out;
   }
 
-  const vide = (h, msg) => { h.innerHTML = `<div class="empty">${msg}</div>`; };
+  // `msg` est toujours du texte (libellés de minéral, de périmètre, année) :
+  // il est échappé ici, au sink, plutôt que chez chacun des appelants.
+  const vide = (h, msg) => { h.innerHTML = `<div class="empty">${esc(msg)}</div>`; };
 
   // ---------------------------------------------------- 1. échelle mondiale
   async function rendreMonde(hote, ctx) {
@@ -666,7 +668,7 @@ export async function mount(container, { labels }) {
       await RENDUS[id](hote, contexte());
     } catch (e) {
       console.error(`Échelle « ${id} » :`, e);
-      hote.innerHTML = `<div class="empty">Cette échelle n'a pas pu être calculée : ${e.message}</div>`;
+      hote.innerHTML = `<div class="empty">Cette échelle n'a pas pu être calculée : ${esc(e.message)}</div>`;
       rendues.delete(id);
       return;
     }
