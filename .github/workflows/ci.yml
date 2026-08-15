@@ -1,0 +1,68 @@
+# CI = Integration Continue : verifications a chaque push / pull request.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Qualite du code Python (Ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      # Seul le lint est verifie. `ruff format` n'est PAS impose : l'appliquer
+      # en bloc a un code jamais formate reecrirait ~1600 lignes (dont tout
+      # scraper/config.py) et rendrait les revues illisibles. Le formatage
+      # reste disponible a la demande via `python -m ruff format .`.
+      - name: Verifier le style (lint)
+        run: python -m ruff check .
+
+  javascript:
+    name: Syntaxe JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Le projet est du JS vanilla sans bundler : il n'y a donc ni build ni
+      # typecheck pour rattraper une erreur de syntaxe. `node --check` analyse
+      # chaque module sans l'executer, ce qui suffit a bloquer un fichier casse
+      # avant qu'il n'atteigne la production.
+      - name: Analyser chaque module webapp
+        run: |
+          erreurs=0
+          while IFS= read -r f; do
+            if ! node --check "$f"; then
+              echo "::error file=$f::Erreur de syntaxe JavaScript"
+              erreurs=$((erreurs + 1))
+            fi
+          done < <(find webapp/js banc -name '*.js' ! -name '*.min.js' 2>/dev/null)
+          if [ "$erreurs" -gt 0 ]; then
+            echo "$erreurs fichier(s) en echec."
+            exit 1
+          fi
+          echo "Tous les modules JavaScript sont syntaxiquement valides."
+
+  tests:
+    name: Tests (node --test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Lancer la suite de tests
+        run: node --test tests/

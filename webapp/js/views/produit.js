@@ -4,7 +4,7 @@
 // elles lisent donc l'agrégat, un fichier unique, plutôt que de balayer les
 // 26 partitions annuelles du détail pour en écarter 99 % des lignes.
 import { query, srcAggregat, sqlStr } from "../db.js";
-import { fmtMetric, axisFmt, pct, downloadCsv } from "../format.js";
+import { fmtMetric, axisFmt, pct, downloadCsv, esc } from "../format.js";
 import { chapitre, pays } from "../labels.js";
 import {
   comboHTML, wireCombo, selectHTML, anneeOptions, fluxOptions, metricOptions, ctrl,
@@ -48,7 +48,7 @@ export async function mount(container, { labels }) {
     const c = normaliserCode(champCode.value);
     if (!c) return true;
     if (!chapitres.some((o) => o.value === c.hs2)) {
-      res.innerHTML = `<div class="empty">Aucun chapitre HS ne correspond au code « ${champCode.value} ».</div>`;
+      res.innerHTML = `<div class="empty">Aucun chapitre HS ne correspond au code « ${esc(champCode.value)} ».</div>`;
       return false;
     }
     combo.set(c.hs2);

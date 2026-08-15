@@ -27,7 +27,7 @@
 // sur le total World, donc écarter les partenaires sans code ISO3 ne perd
 // aucune valeur.
 import { query, srcCritical, sqlStr, clauseCodes, caseCodes } from "../db.js";
-import { fmtMetric, axisFmt, pct, downloadCsv } from "../format.js";
+import { fmtMetric, axisFmt, pct, downloadCsv, esc } from "../format.js";
 import { pays, stades, stadeLabel, codeLabel, matiere, formeLabel, mineraux, codesPour } from "../labels.js";
 import {
   selectHTML, anneeOptions, metricOptions, ctrl, comboHTML, wireCombo, paysOptions,
@@ -534,7 +534,7 @@ export async function mount(container, { labels }) {
   function carteGeographie(hote, ctx, { pivot, entrants, sortants, titre }) {
     const bloc = document.createElement("details");
     bloc.className = "panier carte-geo";
-    bloc.innerHTML = `<summary>${titre}</summary><div class="carte-geo-corps"></div>`;
+    bloc.innerHTML = `<summary>${esc(titre)}</summary><div class="carte-geo-corps"></div>`;
     hote.appendChild(bloc);
 
     let construit = false;
@@ -634,7 +634,7 @@ export async function mount(container, { labels }) {
     const items = legende || ctx.stadesPanier
       .map((s) => ({ label: stadeLabel(labels, s), couleur: ctx.couleurStade[s] }));
     corps.insertAdjacentHTML("beforeend", `<div class="legende">${items
-      .map((i) => `<span class="legende-item"><i style="background:${i.couleur}"></i>${i.label}</span>`)
+      .map((i) => `<span class="legende-item"><i style="background:${esc(i.couleur)}"></i>${esc(i.label)}</span>`)
       .join("")}</div>`);
     const hoteSvg = document.createElement("div");
     corps.appendChild(hoteSvg);
@@ -1070,7 +1070,7 @@ export async function mount(container, { labels }) {
       await RENDUS[id](hote, contexte());
     } catch (e) {
       console.error(`Section « ${id} » :`, e);
-      hote.innerHTML = `<div class="empty">Cette section n'a pas pu être calculée : ${e.message}</div>`;
+      hote.innerHTML = `<div class="empty">Cette section n'a pas pu être calculée : ${esc(e.message)}</div>`;
       rendues.delete(id);
       return;
     }

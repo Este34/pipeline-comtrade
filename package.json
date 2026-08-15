@@ -1,0 +1,9 @@
+{
+  "name": "pipeline-comtrade",
+  "private": true,
+  "type": "module",
+  "description": "Site statique vanilla. Ce fichier ne declare AUCUNE dependance : il existe uniquement pour que Node reconnaisse les modules ES de webapp/js/ et puisse lancer la suite de tests. Le deploiement Vercel n'est pas affecte (vercel.json fixe explicitement installCommand, buildCommand et outputDirectory).",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}

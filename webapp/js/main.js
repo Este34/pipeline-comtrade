@@ -1,6 +1,7 @@
 // Point d'entrée : initialise DuckDB-WASM + libellés FR, gère la navigation
 // par onglets et le montage paresseux de chaque vue.
 import { initDB } from "./db.js";
+import { esc } from "./format.js";
 import { loadLabels } from "./labels.js";
 import { setStatus, wireBackToTop } from "./ui.js";
 import { mountPalette } from "./palette.js";
@@ -48,7 +49,7 @@ async function activer(nom) {
       await VIEWS[nom].mount(container, ctx);
       monte[nom] = true;
     } catch (e) {
-      container.innerHTML = `<div class="empty">Erreur au chargement de la vue : ${e.message}</div>`;
+      container.innerHTML = `<div class="empty">Erreur au chargement de la vue : ${esc(e.message)}</div>`;
       console.error(e);
     }
   }

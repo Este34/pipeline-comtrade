@@ -22,7 +22,6 @@ SCRAPER_DIR = Path(__file__).resolve().parent.parent / "scraper"
 sys.path.insert(0, str(SCRAPER_DIR))
 
 import config  # noqa: E402
-
 import reference_data  # noqa: E402
 
 WEBAPP_REFERENCE_DIR = config.BASE_DIR / "webapp" / "data" / "reference"
