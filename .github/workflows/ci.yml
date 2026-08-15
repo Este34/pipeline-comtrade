@@ -64,5 +64,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # `npm test` et non `node --test tests/` : avec un repertoire en argument,
+      # Node cherche un module nomme « tests » et echoue. Le script du
+      # package.json passe le motif de fichiers, et reste la seule definition.
       - name: Lancer la suite de tests
-        run: node --test tests/
+        run: npm test
